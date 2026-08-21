@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from utils import arquivo_label, clean_tipo_labels, coerce_ptbr_number
+from utils import arquivo_label, clean_tipo_labels, coerce_ptbr_number, get_cargo_categoria
 
 
 def prepare_base_dataframe(df_raw: pd.DataFrame) -> pd.DataFrame:
@@ -48,6 +48,7 @@ def filter_long_dataframe(
     arquivo_sel_label: str,
     nome_sel: list[str],
     nome_col: str | None,
+    categoria_sel: list[str],
     cargo_sel: list[str],
     cargo_col: str | None,
     setor_sel: list[str],
@@ -63,6 +64,9 @@ def filter_long_dataframe(
         out = out[out["__arquivo_label"] == arquivo_sel_label]
     if nome_sel and nome_col and nome_col in out.columns:
         out = out[out[nome_col].astype(str).isin(nome_sel)]
+    if categoria_sel and cargo_col and cargo_col in out.columns:
+        cats = out[cargo_col].astype(str).map(get_cargo_categoria)
+        out = out[cats.isin(categoria_sel)]
     if cargo_sel and cargo_col and cargo_col in out.columns:
         out = out[out[cargo_col].astype(str).isin(cargo_sel)]
     if setor_sel and setor_col and setor_col in out.columns:
@@ -78,6 +82,7 @@ def filter_detail_dataframe(
     arquivo_sel_label: str,
     nome_sel: list[str],
     nome_col: str | None,
+    categoria_sel: list[str],
     cargo_sel: list[str],
     cargo_col: str | None,
     setor_sel: list[str],
@@ -94,6 +99,9 @@ def filter_detail_dataframe(
         out = out[out["__arquivo_label"] == arquivo_sel_label]
     if nome_sel and nome_col and nome_col in out.columns:
         out = out[out[nome_col].astype(str).isin(nome_sel)]
+    if categoria_sel and cargo_col and cargo_col in out.columns:
+        cats = out[cargo_col].astype(str).map(get_cargo_categoria)
+        out = out[cats.isin(categoria_sel)]
     if cargo_sel and cargo_col and cargo_col in out.columns:
         out = out[out[cargo_col].astype(str).isin(cargo_sel)]
     if setor_sel and setor_col and setor_col in out.columns:
@@ -107,3 +115,4 @@ def filter_detail_dataframe(
             mask_any = numeric_selected.fillna(0).ne(0).any(axis=1)
             out = out[mask_any]
     return out
+

@@ -6,11 +6,15 @@ import pandas as pd
 import streamlit as st
 
 
+from utils import ALL_CATEGORIAS, get_cargo_categoria
+
+
 @dataclass
 class FilterState:
     anos_sel: list[str]
     arquivo_sel_label: str
     nome_sel: list[str]
+    categoria_sel: list[str]
     cargo_sel: list[str]
     setor_sel: list[str]
     tipo_sel: list[str]
@@ -47,9 +51,22 @@ def render_sidebar_filters(
                 placeholder="Digite para buscar nome(s)",
             )
 
-        cargos = sorted(df_long[cargo_col].dropna().astype(str).unique().tolist()) if cargo_col and cargo_col in df_long.columns else []
+        cargos_base = sorted(df_long[cargo_col].dropna().astype(str).unique().tolist()) if cargo_col and cargo_col in df_long.columns else []
+        categoria_sel = st.multiselect(
+            "Nível / Categoria do Cargo",
+            options=ALL_CATEGORIAS,
+            default=[],
+            placeholder="Selecione categoria(s)",
+        )
+
+        if categoria_sel:
+            cargos_filtrados = [c for c in cargos_base if get_cargo_categoria(c) in categoria_sel]
+        else:
+            cargos_filtrados = cargos_base
+
+        cargo_sel = st.multiselect("Filtro por Cargo", options=cargos_filtrados, default=[], placeholder="Selecione cargo(s)")
+
         setor_opts = sorted(df_long[setor_col].dropna().astype(str).unique().tolist()) if setor_col and setor_col in df_long.columns else []
-        cargo_sel = st.multiselect("Filtro por Cargo", options=cargos, default=[], placeholder="Selecione cargo(s)")
         setor_sel = st.multiselect("Filtro por Setor", options=setor_opts, default=[], placeholder="Selecione setor(es)")
 
         tipos = sorted(df_long["TipoExib"].dropna().astype(str).unique().tolist())
@@ -60,7 +77,9 @@ def render_sidebar_filters(
         anos_sel=anos_sel,
         arquivo_sel_label=arquivo_sel_label,
         nome_sel=nome_sel,
+        categoria_sel=categoria_sel,
         cargo_sel=cargo_sel,
         setor_sel=setor_sel,
         tipo_sel=tipo_sel,
     )
+

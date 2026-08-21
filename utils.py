@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from pathlib import Path
 
 import pandas as pd
@@ -102,3 +103,61 @@ def pick_col(df: pd.DataFrame, keywords: list[str]) -> str | None:
             if k in c_low:
                 return c
     return None
+
+
+CATEGORIA_MAGISTRATURA = "Magistratura / Juiz / Desembargador"
+CATEGORIA_SUPERIOR = "Nível Superior / Analista"
+CATEGORIA_MEDIO = "Nível Médio / Técnico"
+CATEGORIA_FUNDAMENTAL = "Nível Fundamental / Auxiliar"
+CATEGORIA_COMISSIONADO = "Comissionados / Assessoria / Chefia"
+CATEGORIA_OUTROS = "Outros / Estagiários / Pensionistas"
+
+ALL_CATEGORIAS = [
+    CATEGORIA_MAGISTRATURA,
+    CATEGORIA_SUPERIOR,
+    CATEGORIA_MEDIO,
+    CATEGORIA_FUNDAMENTAL,
+    CATEGORIA_COMISSIONADO,
+    CATEGORIA_OUTROS,
+]
+
+
+def get_cargo_categoria(cargo: str | None) -> str:
+    """Categorize a cargo into predefined levels/categories."""
+    if not cargo:
+        return CATEGORIA_OUTROS
+    nfkd = unicodedata.normalize("NFKD", str(cargo))
+    c_norm = "".join([c for c in nfkd if not unicodedata.combining(c)]).upper().strip()
+    if not c_norm or c_norm == "--- --- ---":
+        return CATEGORIA_OUTROS
+
+    if any(k in c_norm for k in ["DESEMBARGADOR", "JUIZ", "MAGISTRADO"]):
+        if any(c_norm.startswith(p) for p in ["CHEFE DE GABINETE", "OFICIAL DE GABINETE"]):
+            return CATEGORIA_COMISSIONADO
+        return CATEGORIA_MAGISTRATURA
+
+    comiss_kw = [
+        "ASSESSOR",
+        "ASSISTENTE",
+        "CHEFE DE GABINETE",
+        "OFICIAL DE GABINETE",
+        "DIRETOR",
+        "SECRETARIO",
+        "SUBSECRETARIO",
+        "GERENTE DE PROJETOS",
+        "GESTOR DO ARQUIVO",
+    ]
+    if any(k in c_norm for k in comiss_kw):
+        return CATEGORIA_COMISSIONADO
+
+    if "ANALISTA" in c_norm:
+        return CATEGORIA_SUPERIOR
+
+    if "AUXILIAR" in c_norm:
+        return CATEGORIA_FUNDAMENTAL
+
+    if "TECNICO" in c_norm or "OFICIAL DE JUST" in c_norm:
+        return CATEGORIA_MEDIO
+
+    return CATEGORIA_OUTROS
+
