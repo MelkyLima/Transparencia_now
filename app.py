@@ -113,7 +113,7 @@ totais_tipo = build_totais_tipo(df_f)
 left, right = st.columns([1, 1])
 with left:
     table_h = max(260, 38 * len(totais_tipo))
-    st.dataframe(totais_tipo[["Tipo", "Total"]], use_container_width=True, height=table_h, hide_index=True)
+    st.dataframe(totais_tipo[["Tipo", "Total"]], width="stretch", height=table_h, hide_index=True)
 with right:
     stats = build_indenizacao_stats(df_f, totais_tipo)
     st.markdown(
@@ -136,13 +136,13 @@ c1, c2 = st.columns([1, 1])
 with c1:
     fig_c = build_pie_figure(build_pizza_creditos(totais_tipo), "Créditos")
     if fig_c:
-        st.plotly_chart(fig_c, use_container_width=True)
+        st.plotly_chart(fig_c, width="stretch")
     else:
         st.info("Sem dados para montar a pizza de créditos.")
 with c2:
     fig_d = build_pie_figure(build_pizza_debitos(totais_tipo), "Débitos")
     if fig_d:
-        st.plotly_chart(fig_d, use_container_width=True)
+        st.plotly_chart(fig_d, width="stretch")
     else:
         st.info("Sem dados para montar a pizza de débitos.")
 
@@ -153,7 +153,7 @@ st.subheader(f"Gráfico de Evolução ({modo_evol})")
 evol, tipo_ordem = build_evolucao_dataframe(df_f, granularidade=granularidade)
 fig_evol = build_evolucao_figure(evol, tipo_ordem, granularidade=granularidade)
 if fig_evol:
-    st.plotly_chart(fig_evol, use_container_width=True)
+    st.plotly_chart(fig_evol, width="stretch")
 else:
     st.info("Sem dados para evolução mês a mês com os filtros atuais.")
 
@@ -175,4 +175,4 @@ for c in value_cols:
     if c in df_detail.columns:
         # Convert only filtered rows, not full source dataset.
         df_detail[c] = coerce_ptbr_number(df_detail[c]).map(format_brl)
-st.dataframe(df_detail.sort_values(["Mês - Ano"], ascending=[True]), use_container_width=False, height=600, hide_index=True)
+st.dataframe(df_detail.sort_values(["Mês - Ano"], ascending=[True]), width="stretch", height=600, hide_index=True)
