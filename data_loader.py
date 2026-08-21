@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
 
 
-@dataclass(frozen=True)
 class LoadedFile:
-    path: Path
-    consulta_dt: datetime | None
-    df: pd.DataFrame
+    def __init__(self, path: Path, consulta_dt: datetime | None, df: pd.DataFrame):
+        self.path = path
+        self.consulta_dt = consulta_dt
+        self.df = df
 
 
 def try_parse_datetime_ptbr(value: str) -> datetime | None:

@@ -1,23 +1,29 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 import pandas as pd
 import streamlit as st
-
 
 from utils import ALL_CATEGORIAS, get_cargo_categoria
 
 
-@dataclass
 class FilterState:
-    anos_sel: list[str]
-    arquivo_sel_label: str
-    nome_sel: list[str]
-    categoria_sel: list[str]
-    cargo_sel: list[str]
-    setor_sel: list[str]
-    tipo_sel: list[str]
+    def __init__(
+        self,
+        anos_sel: list[str],
+        arquivo_sel_label: str,
+        nome_sel: list[str],
+        categoria_sel: list[str],
+        cargo_sel: list[str],
+        setor_sel: list[str],
+        tipo_sel: list[str],
+    ):
+        self.anos_sel = anos_sel
+        self.arquivo_sel_label = arquivo_sel_label
+        self.nome_sel = nome_sel
+        self.categoria_sel = categoria_sel
+        self.cargo_sel = cargo_sel
+        self.setor_sel = setor_sel
+        self.tipo_sel = tipo_sel
 
 
 def render_sidebar_filters(
