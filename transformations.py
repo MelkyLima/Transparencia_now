@@ -2,12 +2,42 @@ from __future__ import annotations
 
 import pandas as pd
 
+import re
+
 from utils import arquivo_label, clean_tipo_labels, coerce_ptbr_number, get_cargo_categoria
 
 
+def fix_corrupted_text(text: str) -> str:
+    """Clean extra spaces and fix common corrupted characters from transparency CSV exports."""
+    if not isinstance(text, str):
+        return text
+    t = text.strip()
+    t = re.sub(r"\s+", " ", t)
+    replacements = {
+        "ANALISTA DE NEG\ufffdCIOS": "ANALISTA DE NEGÓCIOS",
+        "ANALISTA JUDICI\ufffdRIO": "ANALISTA JUDICIÁRIO",
+        "ASSESSOR DE SA\ufffdDE": "ASSESSOR DE SAÚDE",
+        "ASSESSOR T\ufffdCNICO": "ASSESSOR TÉCNICO",
+        "T\ufffdCNICO JUDICI\ufffdRIO": "TÉCNICO JUDICIÁRIO",
+        "SECRET\ufffdRIO": "SECRETÁRIO",
+        "DISPOSI\ufffdAO": "DISPOSIÇÃO",
+        "UNI\ufffdO": "UNIÃO",
+        "RG\ufffdOS": "ÓRGÃOS",
+        "JUSTI\ufffdA": "JUSTIÇA",
+    }
+    for old, new in replacements.items():
+        t = t.replace(old, new)
+    return t
+
+
 def prepare_base_dataframe(df_raw: pd.DataFrame) -> pd.DataFrame:
-    """Prepare core temporal columns robustly, handling NaT safely."""
+    """Prepare core temporal columns robustly and sanitize text columns."""
     df = df_raw.copy()
+    for col in df.columns:
+        if not str(col).startswith("__"):
+            # Clean spaces and broken characters in text columns
+            df[col] = df[col].astype("string").str.strip().str.replace(r"\s+", " ", regex=True).map(fix_corrupted_text)
+
     mes_ref = df["__mes_ref"].astype("string")
     consulta = pd.to_datetime(df["__consulta_dt"], errors="coerce")
     mes_from_consulta = consulta.dt.strftime("%Y-%m")
