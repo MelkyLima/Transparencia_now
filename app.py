@@ -53,7 +53,7 @@ def prepare_cached(df_raw):
     nome_col = pick_col(df, ["nome"]) or ("Nome" if "Nome" in df.columns else None)
     cargo_col = pick_col(df, ["cargo"]) or ("Cargo" if "Cargo" in df.columns else None)
     setor_col = pick_col(df, ["setor"]) or ("Setor" if "Setor" in df.columns else None)
-    id_cols = [c for c in [nome_col, cargo_col, setor_col, "__arquivo", "__arquivo_label", "__mes_plot", "__mes_dt", "__arquivo_ano"] if c and c in df.columns]
+    id_cols = [c for c in [nome_col, cargo_col, setor_col, "__vinculo", "__arquivo", "__arquivo_label", "__mes_plot", "__mes_dt", "__arquivo_ano"] if c and c in df.columns]
     value_cols = [c for c in df.columns if (not str(c).startswith("__")) and (c not in id_cols)]
     df_long, tipo_map = build_long_dataframe(df, id_cols=id_cols, value_cols=value_cols)
     return df, df_long, tipo_map, nome_col, cargo_col, setor_col, value_cols
@@ -80,6 +80,7 @@ df_f = filter_long_dataframe(
     categoria_sel=state.categoria_sel,
     cargo_sel=state.cargo_sel,
     cargo_col=cargo_col,
+    vinculo_sel=state.vinculo_sel,
     setor_sel=state.setor_sel,
     setor_col=setor_col,
     tipo_sel=state.tipo_sel,
@@ -93,6 +94,7 @@ df_detail_base = filter_detail_dataframe(
     categoria_sel=state.categoria_sel,
     cargo_sel=state.cargo_sel,
     cargo_col=cargo_col,
+    vinculo_sel=state.vinculo_sel,
     setor_sel=state.setor_sel,
     setor_col=setor_col,
     tipo_sel=state.tipo_sel,
@@ -160,7 +162,7 @@ else:
 st.markdown("---")
 st.subheader("Detalhamento dos dados")
 df_detail = df_detail_base.copy()
-rename_map: dict[str, str] = {"__mes_plot": "Mês - Ano", "__arquivo": "Arquivo"}
+rename_map: dict[str, str] = {"__mes_plot": "Mês - Ano", "__arquivo": "Arquivo", "__vinculo": "Vínculo"}
 if nome_col:
     rename_map[nome_col] = "Nome"
 if cargo_col:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from utils import ALL_CATEGORIAS, get_cargo_categoria
+from utils import ALL_CATEGORIAS, ALL_VINCULOS, get_cargo_categoria
 
 
 class FilterState:
@@ -14,6 +14,7 @@ class FilterState:
         nome_sel: list[str],
         categoria_sel: list[str],
         cargo_sel: list[str],
+        vinculo_sel: list[str],
         setor_sel: list[str],
         tipo_sel: list[str],
     ):
@@ -22,6 +23,7 @@ class FilterState:
         self.nome_sel = nome_sel
         self.categoria_sel = categoria_sel
         self.cargo_sel = cargo_sel
+        self.vinculo_sel = vinculo_sel
         self.setor_sel = setor_sel
         self.tipo_sel = tipo_sel
 
@@ -72,6 +74,8 @@ def render_sidebar_filters(
 
         cargo_sel = st.multiselect("Filtro por Cargo", options=cargos_filtrados, default=[], placeholder="Selecione cargo(s)")
 
+        vinculo_sel = st.multiselect("Filtro por Vínculo", options=ALL_VINCULOS, default=[], placeholder="Selecione vínculo(s)")
+
         setor_opts = sorted(df_long[setor_col].dropna().astype(str).unique().tolist()) if setor_col and setor_col in df_long.columns else []
         setor_sel = st.multiselect("Filtro por Setor", options=setor_opts, default=[], placeholder="Selecione setor(es)")
 
@@ -85,6 +89,7 @@ def render_sidebar_filters(
         nome_sel=nome_sel,
         categoria_sel=categoria_sel,
         cargo_sel=cargo_sel,
+        vinculo_sel=vinculo_sel,
         setor_sel=setor_sel,
         tipo_sel=tipo_sel,
     )

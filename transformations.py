@@ -4,7 +4,7 @@ import pandas as pd
 
 import re
 
-from utils import arquivo_label, clean_tipo_labels, coerce_ptbr_number, get_cargo_categoria
+from utils import arquivo_label, clean_tipo_labels, coerce_ptbr_number, get_cargo_categoria, get_vinculo, pick_col
 
 
 def fix_corrupted_text(text: str) -> str:
@@ -49,6 +49,21 @@ def prepare_base_dataframe(df_raw: pd.DataFrame) -> pd.DataFrame:
         [arquivo_label(arq, mes) for arq, mes in zip(df["__arquivo"].astype(str), df["__mes_ref"].astype(str), strict=False)],
         index=df.index,
     )
+
+    cargo_col = pick_col(df, ["cargo"])
+    paradigma_col = pick_col(df, ["paradigma"])
+    comissao_col = pick_col(df, ["comiss", "função", "funcao"])
+    origem_col = pick_col(df, ["origem"])
+
+    p_vals = coerce_ptbr_number(df[paradigma_col]).fillna(0) if paradigma_col and paradigma_col in df.columns else pd.Series(0.0, index=df.index)
+    c_vals = coerce_ptbr_number(df[comissao_col]).fillna(0) if comissao_col and comissao_col in df.columns else pd.Series(0.0, index=df.index)
+    o_vals = coerce_ptbr_number(df[origem_col]).fillna(0) if origem_col and origem_col in df.columns else pd.Series(0.0, index=df.index)
+    cargos = df[cargo_col].astype(str) if cargo_col and cargo_col in df.columns else pd.Series("", index=df.index)
+
+    df["__vinculo"] = [
+        get_vinculo(c, p, cm, o)
+        for c, p, cm, o in zip(cargos, p_vals, c_vals, o_vals, strict=False)
+    ]
     return df
 
 
@@ -81,6 +96,7 @@ def filter_long_dataframe(
     categoria_sel: list[str],
     cargo_sel: list[str],
     cargo_col: str | None,
+    vinculo_sel: list[str],
     setor_sel: list[str],
     setor_col: str | None,
     tipo_sel: list[str],
@@ -99,6 +115,8 @@ def filter_long_dataframe(
         out = out[cats.isin(categoria_sel)]
     if cargo_sel and cargo_col and cargo_col in out.columns:
         out = out[out[cargo_col].astype(str).isin(cargo_sel)]
+    if vinculo_sel and "__vinculo" in out.columns:
+        out = out[out["__vinculo"].isin(vinculo_sel)]
     if setor_sel and setor_col and setor_col in out.columns:
         out = out[out[setor_col].astype(str).isin(setor_sel)]
     if tipo_sel:
@@ -115,6 +133,7 @@ def filter_detail_dataframe(
     categoria_sel: list[str],
     cargo_sel: list[str],
     cargo_col: str | None,
+    vinculo_sel: list[str],
     setor_sel: list[str],
     setor_col: str | None,
     tipo_sel: list[str],
@@ -134,6 +153,8 @@ def filter_detail_dataframe(
         out = out[cats.isin(categoria_sel)]
     if cargo_sel and cargo_col and cargo_col in out.columns:
         out = out[out[cargo_col].astype(str).isin(cargo_sel)]
+    if vinculo_sel and "__vinculo" in out.columns:
+        out = out[out["__vinculo"].isin(vinculo_sel)]
     if setor_sel and setor_col and setor_col in out.columns:
         out = out[out[setor_col].astype(str).isin(setor_sel)]
 
@@ -145,4 +166,3 @@ def filter_detail_dataframe(
             mask_any = numeric_selected.fillna(0).ne(0).any(axis=1)
             out = out[mask_any]
     return out
-

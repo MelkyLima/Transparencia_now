@@ -161,3 +161,78 @@ def get_cargo_categoria(cargo: str | None) -> str:
 
     return CATEGORIA_OUTROS
 
+
+def remove_accents(text: str) -> str:
+    """Remove accents from string."""
+    nfkd = unicodedata.normalize("NFKD", str(text or ""))
+    return "".join([c for c in nfkd if not unicodedata.combining(c)])
+
+
+VINCULO_EFETIVO = "Servidor Efetivo (Concursado)"
+VINCULO_COMISSIONADO = "Cargo Comissionado / Sem Vínculo Efetivo"
+VINCULO_MAGISTRADO = "Magistrado Ativo"
+VINCULO_APOSENTADO_PENSIONISTA = "Aposentado / Pensionista"
+VINCULO_CEDIDO_REQUISITADO = "Cedido / Requisitado / À Disposição"
+VINCULO_ESTAGIARIO = "Estagiário"
+VINCULO_OUTROS = "Outros"
+
+ALL_VINCULOS = [
+    VINCULO_EFETIVO,
+    VINCULO_COMISSIONADO,
+    VINCULO_MAGISTRADO,
+    VINCULO_APOSENTADO_PENSIONISTA,
+    VINCULO_CEDIDO_REQUISITADO,
+    VINCULO_ESTAGIARIO,
+    VINCULO_OUTROS,
+]
+
+
+def get_vinculo(
+    cargo: str | None,
+    paradigma_val: float = 0.0,
+    comissao_val: float = 0.0,
+    origem_val: float = 0.0,
+) -> str:
+    """Classify employee bond (Vínculo) based on cargo title and salary components."""
+    if not cargo:
+        return VINCULO_OUTROS
+    c_norm = remove_accents(str(cargo)).upper().strip()
+    if not c_norm or c_norm == "--- --- ---":
+        return VINCULO_OUTROS
+
+    if "ESTAGIARIO" in c_norm:
+        return VINCULO_ESTAGIARIO
+
+    if "PENSIONISTA" in c_norm or "APOSENTADO" in c_norm:
+        return VINCULO_APOSENTADO_PENSIONISTA
+
+    if any(k in c_norm for k in ["CEDIDO", "REQUISITADO", "DISPOSICAO", "DISPOSIAO"]):
+        return VINCULO_CEDIDO_REQUISITADO
+
+    if any(k in c_norm for k in ["DESEMBARGADOR", "JUIZ", "MAGISTRADO"]):
+        if not any(c_norm.startswith(p) for p in ["CHEFE DE GABINETE", "OFICIAL DE GABINETE"]):
+            return VINCULO_MAGISTRADO
+
+    if paradigma_val > 0 or origem_val > 0:
+        return VINCULO_EFETIVO
+
+    if any(k in c_norm for k in ["ANALISTA", "TECNICO", "AUXILIAR", "OFICIAL DE JUSTICA"]):
+        return VINCULO_EFETIVO
+
+    comiss_kw = [
+        "ASSESSOR",
+        "ASSISTENTE",
+        "CHEFE DE GABINETE",
+        "OFICIAL DE GABINETE",
+        "DIRETOR",
+        "SECRETARIO",
+        "SUBSECRETARIO",
+        "GERENTE DE PROJETOS",
+        "GESTOR DO ARQUIVO",
+    ]
+    if any(k in c_norm for k in comiss_kw) or comissao_val > 0:
+        return VINCULO_COMISSIONADO
+
+    return VINCULO_OUTROS
+
+
