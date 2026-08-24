@@ -105,9 +105,10 @@ def read_csv_with_fallbacks(path: Path) -> LoadedFile:
 
 
 def list_csv_files(folder: Path, recursive: bool = False) -> list[Path]:
-    if recursive:
-        return sorted([p for p in folder.rglob("*.csv") if p.is_file()])
-    return sorted([p for p in folder.glob("*.csv") if p.is_file()])
+    if not folder.exists():
+        return []
+    pattern = "**/*" if recursive else "*"
+    return sorted([p for p in folder.glob(pattern) if p.is_file() and p.suffix.lower() == ".csv"])
 
 
 def load_all_dataframe(files: list[Path]) -> pd.DataFrame:

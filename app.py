@@ -59,10 +59,10 @@ def prepare_cached(df_raw):
     return df, df_long, tipo_map, nome_col, cargo_col, setor_col, value_cols
 
 
-folder = Path.cwd() /"dados"
+folder = Path(__file__).parent / "dados"
 csv_files = list_csv_files(folder, recursive=False)
 if not csv_files:
-    st.warning("Nenhum CSV encontrado nessa pasta.")
+    st.warning(f"Nenhum CSV encontrado na pasta {folder}.")
     st.stop()
 
 df_raw = load_cached(tuple(str(p) for p in csv_files))
