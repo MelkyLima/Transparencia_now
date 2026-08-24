@@ -76,7 +76,7 @@ st.markdown(
 st.title("Painel Transparência TJRR")
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_resource(show_spinner=False)
 def load_cached(files: tuple[str, ...]):
     return load_all_dataframe([Path(p) for p in files])
 
@@ -87,9 +87,9 @@ def convert_df_to_csv(df: pd.DataFrame) -> bytes:
     return df.to_csv(index=False, sep=";", encoding="utf-8-sig").encode("utf-8-sig")
 
 
-@st.cache_data(show_spinner=False)
-def prepare_cached(df_raw):
-    """Cache expensive base transformations independent from UI filters."""
+@st.cache_resource(show_spinner=False)
+def prepare_cached(df_raw: pd.DataFrame):
+    """Cache expensive base transformations as a singleton resource without RAM duplication."""
     df = prepare_base_dataframe(df_raw)
     nome_col = pick_col(df, ["nome"]) or ("Nome" if "Nome" in df.columns else None)
     cargo_col = pick_col(df, ["cargo"]) or ("Cargo" if "Cargo" in df.columns else None)
@@ -97,7 +97,40 @@ def prepare_cached(df_raw):
     id_cols = [c for c in [nome_col, cargo_col, setor_col, "__vinculo", "__arquivo", "__arquivo_label", "__mes_plot", "__mes_dt", "__arquivo_ano"] if c and c in df.columns]
     value_cols = [c for c in df.columns if (not str(c).startswith("__")) and (c not in id_cols)]
     df_long, tipo_map = build_long_dataframe(df, id_cols=id_cols, value_cols=value_cols)
+
+    # Prune unneeded columns in df_long to save RAM
+    keep_cols = [c for c in [nome_col, cargo_col, setor_col, "__vinculo", "__arquivo_label", "__mes_dt", "__arquivo_ano", "TipoExib", "Valor"] if c in df_long.columns]
+    df_long = df_long[keep_cols]
+
+    gc.collect()
     return df, df_long, tipo_map, nome_col, cargo_col, setor_col, value_cols
+
+
+@st.cache_data(show_spinner=False)
+def format_detail_df(
+    df_detail_base: pd.DataFrame,
+    value_cols_tuple: tuple[str, ...],
+    nome_col: str | None,
+    cargo_col: str | None,
+    setor_col: str | None,
+) -> pd.DataFrame:
+    """Cache string formatting of detail table to prevent massive RAM allocations on reruns."""
+    df_detail = df_detail_base.copy()
+    rename_map: dict[str, str] = {"__mes_plot": "Mês - Ano", "__arquivo": "Arquivo", "__vinculo": "Vínculo"}
+    if nome_col:
+        rename_map[nome_col] = "Nome"
+    if cargo_col:
+        rename_map[cargo_col] = "Cargo"
+    if setor_col:
+        rename_map[setor_col] = "Setor"
+    for c in value_cols_tuple:
+        if c in df_detail.columns:
+            rename_map[c] = clean_tipo_label(c)
+    df_detail = df_detail.rename(columns=rename_map)
+    for c in value_cols_tuple:
+        if c in df_detail.columns:
+            df_detail[c] = coerce_ptbr_number(df_detail[c]).map(format_brl)
+    return df_detail.sort_values(["Mês - Ano"], ascending=[True])
 
 
 folder = Path(__file__).parent / "dados"
@@ -330,25 +363,15 @@ else:
     st.info("Sem dados para evolução mês a mês com os filtros atuais.")
 
 st.markdown("---")
-df_detail = df_detail_base.copy()
-rename_map: dict[str, str] = {"__mes_plot": "Mês - Ano", "__arquivo": "Arquivo", "__vinculo": "Vínculo"}
-if nome_col:
-    rename_map[nome_col] = "Nome"
-if cargo_col:
-    rename_map[cargo_col] = "Cargo"
-if setor_col:
-    rename_map[setor_col] = "Setor"
-for c in value_cols:
-    if c in df_detail.columns:
-        rename_map[c] = clean_tipo_label(c)
-df_detail = df_detail.rename(columns=rename_map)
-for c in value_cols:
-    if c in df_detail.columns:
-        # Convert only filtered rows, not full source dataset.
-        df_detail[c] = coerce_ptbr_number(df_detail[c]).map(format_brl)
+df_export = format_detail_df(
+    df_detail_base=df_detail_base,
+    value_cols_tuple=tuple(value_cols),
+    nome_col=nome_col,
+    cargo_col=cargo_col,
+    setor_col=setor_col,
+)
 
 col_det_title, col_det_down = st.columns([3, 1])
-df_export = df_detail.sort_values(["Mês - Ano"], ascending=[True])
 with col_det_title:
     st.subheader("Detalhamento dos dados")
 with col_det_down:
