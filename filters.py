@@ -73,15 +73,31 @@ def render_sidebar_filters(
     with st.sidebar:
         st.header("Filtros")
 
-        # Read active selections from session_state if available
         anos_default = sorted([str(int(a)) for a in df["__arquivo_ano"].dropna().unique().tolist()])
-        cur_anos = st.session_state.get("f_anos", anos_default)
-        cur_arquivo = st.session_state.get("f_arquivo", "Todos")
-        cur_nome = st.session_state.get("f_nome", [])
-        cur_categoria = st.session_state.get("f_categoria", [])
-        cur_vinculo = st.session_state.get("f_vinculo", [])
-        cur_cargo = st.session_state.get("f_cargo", [])
-        cur_setor = st.session_state.get("f_setor", [])
+
+        # Initialize session state keys on first load
+        if "f_anos" not in st.session_state:
+            st.session_state["f_anos"] = anos_default
+        if "f_arquivo" not in st.session_state:
+            st.session_state["f_arquivo"] = "Todos"
+        if "f_nome" not in st.session_state:
+            st.session_state["f_nome"] = []
+        if "f_categoria" not in st.session_state:
+            st.session_state["f_categoria"] = []
+        if "f_vinculo" not in st.session_state:
+            st.session_state["f_vinculo"] = []
+        if "f_cargo" not in st.session_state:
+            st.session_state["f_cargo"] = []
+        if "f_setor" not in st.session_state:
+            st.session_state["f_setor"] = []
+
+        cur_anos = st.session_state["f_anos"]
+        cur_arquivo = st.session_state["f_arquivo"]
+        cur_nome = st.session_state["f_nome"]
+        cur_categoria = st.session_state["f_categoria"]
+        cur_vinculo = st.session_state["f_vinculo"]
+        cur_cargo = st.session_state["f_cargo"]
+        cur_setor = st.session_state["f_setor"]
 
         # 1. Anos
         df_for_anos = get_filtered_df(
@@ -97,8 +113,8 @@ def render_sidebar_filters(
             setor_sel=cur_setor,
         )
         avail_anos = sorted([str(int(a)) for a in df_for_anos["__arquivo_ano"].dropna().unique().tolist()])
-        valid_cur_anos = [a for a in cur_anos if a in avail_anos] if cur_anos else avail_anos
-        anos_sel = st.multiselect("Ano(s) do arquivo", options=avail_anos, default=valid_cur_anos, key="f_anos", placeholder="Selecione ano(s)")
+        st.session_state["f_anos"] = [a for a in st.session_state["f_anos"] if a in avail_anos] or avail_anos
+        anos_sel = st.multiselect("Ano(s) do arquivo", options=avail_anos, key="f_anos", placeholder="Selecione ano(s)")
 
         # 2. Busca por Arquivo
         df_for_arq = get_filtered_df(
@@ -117,8 +133,9 @@ def render_sidebar_filters(
         arquivos_df = arquivos_df.sort_values(["__mes_dt", "__arquivo"])
         avail_arq_labels = arquivos_df["__arquivo_label"].dropna().astype(str).tolist()
         arq_options = ["Todos"] + avail_arq_labels
-        idx_arq = arq_options.index(cur_arquivo) if cur_arquivo in arq_options else 0
-        arquivo_sel_label = st.selectbox("Busca por Arquivo", options=arq_options, index=idx_arq, key="f_arquivo")
+        if st.session_state["f_arquivo"] not in arq_options:
+            st.session_state["f_arquivo"] = "Todos"
+        arquivo_sel_label = st.selectbox("Busca por Arquivo", options=arq_options, key="f_arquivo")
 
         # 3. Busca por Nome
         df_for_nome = get_filtered_df(
@@ -134,8 +151,8 @@ def render_sidebar_filters(
             setor_sel=cur_setor,
         )
         avail_nomes = sorted(df_for_nome[nome_col].dropna().astype(str).unique().tolist()) if nome_col and nome_col in df_for_nome.columns else []
-        valid_cur_nome = [n for n in cur_nome if n in avail_nomes]
-        nome_sel = st.multiselect("Busca por Nome", options=avail_nomes, default=valid_cur_nome, key="f_nome", placeholder="Digite para buscar nome(s)")
+        st.session_state["f_nome"] = [n for n in st.session_state["f_nome"] if n in avail_nomes]
+        nome_sel = st.multiselect("Busca por Nome", options=avail_nomes, key="f_nome", placeholder="Digite para buscar nome(s)")
 
         # 4. Nível / Categoria do Cargo
         df_for_cat = get_filtered_df(
@@ -152,8 +169,8 @@ def render_sidebar_filters(
         )
         cats_in_df = df_for_cat[cargo_col].astype(str).map(get_cargo_categoria) if cargo_col and cargo_col in df_for_cat.columns else pd.Series(dtype=str)
         avail_cats = [c for c in ALL_CATEGORIAS if c in cats_in_df.unique()]
-        valid_cur_cat = [c for c in cur_categoria if c in avail_cats]
-        categoria_sel = st.multiselect("Nível / Categoria do Cargo", options=avail_cats, default=valid_cur_cat, key="f_categoria", placeholder="Selecione categoria(s)")
+        st.session_state["f_categoria"] = [c for c in st.session_state["f_categoria"] if c in avail_cats]
+        categoria_sel = st.multiselect("Nível / Categoria do Cargo", options=avail_cats, key="f_categoria", placeholder="Selecione categoria(s)")
 
         # 5. Filtro por Vínculo
         df_for_vinc = get_filtered_df(
@@ -170,8 +187,8 @@ def render_sidebar_filters(
         )
         vincs_in_df = df_for_vinc["__vinculo"].dropna().unique().tolist() if "__vinculo" in df_for_vinc.columns else []
         avail_vincs = [v for v in ALL_VINCULOS if v in vincs_in_df]
-        valid_cur_vinc = [v for v in cur_vinculo if v in avail_vincs]
-        vinculo_sel = st.multiselect("Filtro por Vínculo", options=avail_vincs, default=valid_cur_vinc, key="f_vinculo", placeholder="Selecione vínculo(s)")
+        st.session_state["f_vinculo"] = [v for v in st.session_state["f_vinculo"] if v in avail_vincs]
+        vinculo_sel = st.multiselect("Filtro por Vínculo", options=avail_vincs, key="f_vinculo", placeholder="Selecione vínculo(s)")
 
         # 6. Filtro por Cargo
         df_for_cargo = get_filtered_df(
@@ -187,8 +204,8 @@ def render_sidebar_filters(
             setor_sel=cur_setor,
         )
         avail_cargos = sorted(df_for_cargo[cargo_col].dropna().astype(str).unique().tolist()) if cargo_col and cargo_col in df_for_cargo.columns else []
-        valid_cur_cargo = [c for c in cur_cargo if c in avail_cargos]
-        cargo_sel = st.multiselect("Filtro por Cargo", options=avail_cargos, default=valid_cur_cargo, key="f_cargo", placeholder="Selecione cargo(s)")
+        st.session_state["f_cargo"] = [c for c in st.session_state["f_cargo"] if c in avail_cargos]
+        cargo_sel = st.multiselect("Filtro por Cargo", options=avail_cargos, key="f_cargo", placeholder="Selecione cargo(s)")
 
         # 7. Filtro por Setor
         df_for_setor = get_filtered_df(
@@ -204,8 +221,8 @@ def render_sidebar_filters(
             cargo_sel=cargo_sel,
         )
         avail_setores = sorted(df_for_setor[setor_col].dropna().astype(str).unique().tolist()) if setor_col and setor_col in df_for_setor.columns else []
-        valid_cur_setor = [s for s in cur_setor if s in avail_setores]
-        setor_sel = st.multiselect("Filtro por Setor", options=avail_setores, default=valid_cur_setor, key="f_setor", placeholder="Selecione setor(es)")
+        st.session_state["f_setor"] = [s for s in st.session_state["f_setor"] if s in avail_setores]
+        setor_sel = st.multiselect("Filtro por Setor", options=avail_setores, key="f_setor", placeholder="Selecione setor(es)")
 
         # 8. Busca por Tipo
         df_for_tipo = get_filtered_df(
