@@ -227,6 +227,42 @@ def render_financial_dashboard(df_totais: pd.DataFrame) -> str:
     )
 
 
+def render_indenizacao_card(stats: dict[str, str]) -> str:
+    """Render Painel de Indenizações spanning 100% height with matching visual elements."""
+    return (
+        f'<div style="height: 100%; min-height: 480px; background: rgba(20, 28, 45, 0.45); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; user-select: text !important; -webkit-user-select: text !important;">'
+        f'<div>'
+        f'<div style="display: flex; align-items: center; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid rgba(56, 189, 248, 0.3); margin-bottom: 14px;">'
+        f'<span style="width: 26px; height: 26px; border-radius: 50%; background: #0284c7; display: inline-flex; align-items: center; justify-content: center; font-size: 0.85rem; color: white;">🏖️</span>'
+        f'<span style="font-size: 1.05rem; font-weight: 700; color: #ffffff;">Painel de Indenizações</span>'
+        f'</div>'
+        f'<div style="display: flex; flex-direction: column; gap: 14px;">'
+        f'<div style="padding-bottom: 10px; border-bottom: 1px solid rgba(151, 166, 195, 0.12);">'
+        f'<div style="font-size: 0.8rem; color: #94a3b8; font-weight: 500;">Último registro ({stats["mes_label"]})</div>'
+        f'<div style="font-size: 1.45rem; font-weight: 800; color: #ffffff; margin-top: 2px;">{stats["total_mes_atual"]}</div>'
+        f'</div>'
+        f'<div style="padding-bottom: 10px; border-bottom: 1px solid rgba(151, 166, 195, 0.12);">'
+        f'<div style="font-size: 0.8rem; color: #94a3b8; font-weight: 500;">Total últimos 3 meses ({stats["meses_3m_label"]})</div>'
+        f'<div style="font-size: 1.45rem; font-weight: 800; color: #ffffff; margin-top: 2px;">{stats["total_3m"]}</div>'
+        f'</div>'
+        f'<div style="padding-bottom: 10px; border-bottom: 1px solid rgba(151, 166, 195, 0.12);">'
+        f'<div style="font-size: 0.8rem; color: #94a3b8; font-weight: 500;">Total deste ano ({stats["ano_recente"]})</div>'
+        f'<div style="font-size: 1.45rem; font-weight: 800; color: #ffffff; margin-top: 2px;">{stats["total_ultimo_ano"]}</div>'
+        f'</div>'
+        f'<div style="padding-bottom: 10px; border-bottom: 1px solid rgba(151, 166, 195, 0.12);">'
+        f'<div style="font-size: 0.8rem; color: #94a3b8; font-weight: 500;">Total ano anterior ({stats["ano_anterior"]})</div>'
+        f'<div style="font-size: 1.45rem; font-weight: 800; color: #94a3b8; margin-top: 2px;">{stats["total_ano_anterior"]}</div>'
+        f'</div>'
+        f'</div>'
+        f'</div>'
+        f'<div style="background: rgba(14, 165, 233, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; padding: 12px 14px; margin-top: 16px;">'
+        f'<div style="font-size: 0.82rem; font-weight: 600; color: #7dd3fc;">Total Geral (Indenizações)</div>'
+        f'<div style="font-size: 1.55rem; font-weight: 800; color: #38bdf8; margin-top: 2px;">{stats["inden_total"]}</div>'
+        f'</div>'
+        f'</div>'
+    )
+
+
 st.markdown("---")
 st.subheader(f"Totais por tipo ({title_scope})")
 totais_tipo = build_totais_tipo(df_f)
@@ -235,19 +271,7 @@ with left:
     st.html(render_financial_dashboard(totais_tipo[["Tipo", "Total"]]))
 with right:
     stats = build_indenizacao_stats(df_f, totais_tipo)
-    st.markdown(
-        f"""
-<div class="ind-card">
-  <div class="ind-card-title">Painel de Indenizações</div>
-  <div class="ind-item"><div class="ind-label">Último registro ({stats["mes_label"]})</div><div class="ind-value">{stats["total_mes_atual"]}</div></div>
-  <div class="ind-item"><div class="ind-label">Total últimos 3 meses ({stats["meses_3m_label"]})</div><div class="ind-value">{stats["total_3m"]}</div></div>
-  <div class="ind-item"><div class="ind-label">Total deste ano ({stats["ano_recente"]})</div><div class="ind-value">{stats["total_ultimo_ano"]}</div></div>
-  <div class="ind-item"><div class="ind-label">Total ano anterior ({stats["ano_anterior"]})</div><div class="ind-value">{stats["total_ano_anterior"]}</div></div>
-  <div class="ind-item"><div class="ind-label">Total Geral</div><div class="ind-value">{stats["inden_total"]}</div></div>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
+    st.html(render_indenizacao_card(stats))
 
 st.markdown("---")
 st.subheader("Gráficos de Créditos e Débitos")
