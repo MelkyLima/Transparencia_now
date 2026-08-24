@@ -28,6 +28,10 @@ st.set_page_config(page_title="Painel CSV", layout="wide")
 st.markdown(
     """
 <style>
+* {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+}
 .ind-card { border: 1px solid rgba(151,166,195,0.35); border-radius: 12px; padding: 16px 18px; background: rgba(20,28,45,0.45); }
 .ind-card-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 10px; }
 .ind-item { margin-bottom: 12px; }
@@ -160,7 +164,6 @@ else:
     st.info("Sem dados para evolução mês a mês com os filtros atuais.")
 
 st.markdown("---")
-st.subheader("Detalhamento dos dados")
 df_detail = df_detail_base.copy()
 rename_map: dict[str, str] = {"__mes_plot": "Mês - Ano", "__arquivo": "Arquivo", "__vinculo": "Vínculo"}
 if nome_col:
@@ -177,4 +180,18 @@ for c in value_cols:
     if c in df_detail.columns:
         # Convert only filtered rows, not full source dataset.
         df_detail[c] = coerce_ptbr_number(df_detail[c]).map(format_brl)
-st.dataframe(df_detail.sort_values(["Mês - Ano"], ascending=[True]), width="stretch", height=600, hide_index=True)
+
+col_det_title, col_det_down = st.columns([3, 1])
+df_export = df_detail.sort_values(["Mês - Ano"], ascending=[True])
+with col_det_title:
+    st.subheader("Detalhamento dos dados")
+with col_det_down:
+    csv_bytes = df_export.to_csv(index=False, sep=";", encoding="utf-8-sig").encode("utf-8-sig")
+    st.download_button(
+        label="📥 Baixar Dados (CSV)",
+        data=csv_bytes,
+        file_name="dados_transparencia_filtrados.csv",
+        mime="text/csv",
+        width="stretch",
+    )
+st.dataframe(df_export, width="stretch", height=600, hide_index=True)
