@@ -113,13 +113,41 @@ if state.nome_sel and nome_col and nome_col in df_f.columns:
     elif len(found_names) > 1:
         title_scope = ", ".join(found_names[:3]) + ("..." if len(found_names) > 3 else "")
 
+def render_selectable_table(df_totais: pd.DataFrame) -> str:
+    """Render totais_tipo dataframe as native HTML table for 100% text selection and mouse copy support."""
+    rows_html = ""
+    for _, row in df_totais.iterrows():
+        tipo_str = str(row["Tipo"])
+        total_str = str(row["Total"])
+        rows_html += f"""
+        <tr style="border-bottom: 1px solid rgba(151,166,195,0.18);">
+            <td style="padding: 9px 12px; font-size: 0.9rem; color: #e2e8f0; user-select: text !important; -webkit-user-select: text !important;">{tipo_str}</td>
+            <td style="padding: 9px 12px; font-size: 0.9rem; font-weight: 600; text-align: right; color: #ffffff; user-select: text !important; -webkit-user-select: text !important;">{total_str}</td>
+        </tr>
+        """
+    return f"""
+    <div style="max-height: 440px; overflow-y: auto; border: 1px solid rgba(151,166,195,0.35); border-radius: 12px; background: rgba(20,28,45,0.45); padding: 2px; user-select: text !important; -webkit-user-select: text !important;">
+    <table style="width: 100%; border-collapse: collapse; margin: 0; user-select: text !important; -webkit-user-select: text !important;">
+        <thead>
+            <tr style="border-bottom: 1px solid rgba(151,166,195,0.35); background: rgba(30,42,65,0.75);">
+                <th style="padding: 10px 12px; text-align: left; font-size: 0.92rem; font-weight: 700; color: #ffffff; user-select: text !important; -webkit-user-select: text !important;">Tipo</th>
+                <th style="padding: 10px 12px; text-align: right; font-size: 0.92rem; font-weight: 700; color: #ffffff; user-select: text !important; -webkit-user-select: text !important;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {rows_html}
+        </tbody>
+    </table>
+    </div>
+    """
+
+
 st.markdown("---")
 st.subheader(f"Totais por tipo ({title_scope})")
 totais_tipo = build_totais_tipo(df_f)
 left, right = st.columns([1, 1])
 with left:
-    table_h = max(260, 38 * len(totais_tipo))
-    st.dataframe(totais_tipo[["Tipo", "Total"]], width="stretch", height=table_h, hide_index=True)
+    st.markdown(render_selectable_table(totais_tipo[["Tipo", "Total"]]), unsafe_allow_html=True)
 with right:
     stats = build_indenizacao_stats(df_f, totais_tipo)
     st.markdown(
