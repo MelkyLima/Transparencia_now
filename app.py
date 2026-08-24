@@ -113,15 +113,14 @@ if state.nome_sel and nome_col and nome_col in df_f.columns:
     elif len(found_names) > 1:
         title_scope = ", ".join(found_names[:3]) + ("..." if len(found_names) > 3 else "")
 
-def render_selectable_table(df_totais: pd.DataFrame) -> str:
-    """Render totais_tipo divided into 3 distinct sections:
-    1. Entradas (Verde - apenas detalhamento)
-    2. Saídas (Vermelho - apenas detalhamento)
-    3. Totais e Resultado Líquido (Azul - contendo Total de Créditos, Total de Débitos e Rendimento Líquido).
-    """
-    entradas_rows = ""
-    saidas_rows = ""
-    resumo_dict: dict[str, tuple[str, str]] = {}
+def render_financial_dashboard(df_totais: pd.DataFrame) -> str:
+    """Render financial dashboard with 3 top summary cards and 2 detailed tables matching reference mockup."""
+    entradas_rows_html = ""
+    saidas_rows_html = ""
+
+    total_creditos_val = "R$ 0,00"
+    total_debitos_val = "R$ 0,00"
+    rendimento_liquido_val = "R$ 0,00"
 
     saidas_patterns = ["imposto", "previdência", "previdencia", "desconto", "teto"]
 
@@ -130,87 +129,100 @@ def render_selectable_table(df_totais: pd.DataFrame) -> str:
         total_str = str(row["Total"])
         t_lower = tipo_str.lower()
 
-        # Check if it belongs to Part 3 (Summary Totals)
         if "total de créditos" in t_lower or "total de creditos" in t_lower:
-            resumo_dict["creditos"] = (tipo_str, total_str)
+            total_creditos_val = total_str
         elif "total de débitos" in t_lower or "total de debitos" in t_lower:
-            resumo_dict["debitos"] = (tipo_str, total_str)
+            total_debitos_val = total_str
         elif "líquido" in t_lower or "liquido" in t_lower:
-            resumo_dict["liquido"] = (tipo_str, total_str)
+            rendimento_liquido_val = total_str
         elif any(p in t_lower for p in saidas_patterns) or "débito" in t_lower or "debit" in t_lower:
-            saidas_rows += (
-                f'<tr style="border-bottom: 1px solid rgba(239, 68, 68, 0.18); background: rgba(239, 68, 68, 0.05);">'
-                f'<td style="padding: 9px 12px; font-size: 0.9rem; color: #fca5a5; user-select: text !important; -webkit-user-select: text !important;"><span style="color:#ef4444; margin-right:6px;">🔴</span>{tipo_str}</td>'
-                f'<td style="padding: 9px 12px; font-size: 0.9rem; font-weight: 600; text-align: right; color: #f87171; user-select: text !important; -webkit-user-select: text !important;">{total_str}</td>'
+            saidas_rows_html += (
+                f'<tr style="border-bottom: 1px solid rgba(151,166,195,0.12);">'
+                f'<td style="padding: 9px 12px; font-size: 0.88rem; color: #e2e8f0; user-select: text !important; -webkit-user-select: text !important;">{tipo_str}</td>'
+                f'<td style="padding: 9px 12px; font-size: 0.88rem; font-weight: 600; text-align: right; color: #ffffff; user-select: text !important; -webkit-user-select: text !important;">{total_str}</td>'
                 f'</tr>'
             )
         else:
-            entradas_rows += (
-                f'<tr style="border-bottom: 1px solid rgba(34, 197, 94, 0.18); background: rgba(34, 197, 94, 0.05);">'
-                f'<td style="padding: 9px 12px; font-size: 0.9rem; color: #86efac; user-select: text !important; -webkit-user-select: text !important;"><span style="color:#22c55e; margin-right:6px;">🟢</span>{tipo_str}</td>'
-                f'<td style="padding: 9px 12px; font-size: 0.9rem; font-weight: 600; text-align: right; color: #4ade80; user-select: text !important; -webkit-user-select: text !important;">{total_str}</td>'
+            entradas_rows_html += (
+                f'<tr style="border-bottom: 1px solid rgba(151,166,195,0.12);">'
+                f'<td style="padding: 9px 12px; font-size: 0.88rem; color: #e2e8f0; user-select: text !important; -webkit-user-select: text !important;">{tipo_str}</td>'
+                f'<td style="padding: 9px 12px; font-size: 0.88rem; font-weight: 600; text-align: right; color: #ffffff; user-select: text !important; -webkit-user-select: text !important;">{total_str}</td>'
                 f'</tr>'
             )
 
-    # Build Part 3 (Summary Totals)
-    resumo_rows = ""
-    if "creditos" in resumo_dict:
-        t_name, t_val = resumo_dict["creditos"]
-        resumo_rows += (
-            f'<tr style="border-bottom: 1px solid rgba(34, 197, 94, 0.2); background: rgba(34, 197, 94, 0.08);">'
-            f'<td style="padding: 9px 12px; font-size: 0.92rem; font-weight: 600; color: #4ade80; user-select: text !important; -webkit-user-select: text !important;"><span style="color:#22c55e; margin-right:6px;">🟢</span>{t_name}</td>'
-            f'<td style="padding: 9px 12px; font-size: 0.92rem; font-weight: 700; text-align: right; color: #4ade80; user-select: text !important; -webkit-user-select: text !important;">{t_val}</td>'
-            f'</tr>'
-        )
-    if "debitos" in resumo_dict:
-        t_name, t_val = resumo_dict["debitos"]
-        resumo_rows += (
-            f'<tr style="border-bottom: 1px solid rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.08);">'
-            f'<td style="padding: 9px 12px; font-size: 0.92rem; font-weight: 600; color: #f87171; user-select: text !important; -webkit-user-select: text !important;"><span style="color:#ef4444; margin-right:6px;">🔴</span>{t_name}</td>'
-            f'<td style="padding: 9px 12px; font-size: 0.92rem; font-weight: 700; text-align: right; color: #f87171; user-select: text !important; -webkit-user-select: text !important;">{t_val}</td>'
-            f'</tr>'
-        )
-    if "liquido" in resumo_dict:
-        t_name, t_val = resumo_dict["liquido"]
-        resumo_rows += (
-            f'<tr style="border-bottom: 1px solid rgba(56, 189, 248, 0.3); background: rgba(14, 165, 233, 0.15);">'
-            f'<td style="padding: 10px 12px; font-size: 0.95rem; font-weight: 700; color: #38bdf8; user-select: text !important; -webkit-user-select: text !important;"><span style="color:#38bdf8; margin-right:6px;">🔵</span>{t_name}</td>'
-            f'<td style="padding: 10px 12px; font-size: 0.95rem; font-weight: 700; text-align: right; color: #38bdf8; user-select: text !important; -webkit-user-select: text !important;">{t_val}</td>'
-            f'</tr>'
-        )
-
-    no_ent = '<tr><td colspan="2" style="padding:8px 12px; color:#94a3b8; font-size:0.85rem;">Nenhuma entrada registrada</td></tr>'
-    no_sai = '<tr><td colspan="2" style="padding:8px 12px; color:#94a3b8; font-size:0.85rem;">Nenhum desconto registrado</td></tr>'
-    no_res = '<tr><td colspan="2" style="padding:8px 12px; color:#94a3b8; font-size:0.85rem;">Nenhum resumo disponível</td></tr>'
+    no_ent = '<tr><td colspan="2" style="padding:10px; color:#94a3b8; font-size:0.85rem;">Nenhuma entrada registrada</td></tr>'
+    no_sai = '<tr><td colspan="2" style="padding:10px; color:#94a3b8; font-size:0.85rem;">Nenhum desconto registrado</td></tr>'
 
     return (
-        f'<div style="max-height: 540px; overflow-y: auto; border: 1px solid rgba(151,166,195,0.35); border-radius: 12px; background: rgba(20,28,45,0.45); padding: 2px; user-select: text !important; -webkit-user-select: text !important;">'
-        f'<table style="width: 100%; border-collapse: collapse; margin: 0; user-select: text !important; -webkit-user-select: text !important;">'
-        f'<thead>'
-        f'<tr style="background: rgba(34, 197, 94, 0.25); border-bottom: 1px solid rgba(34, 197, 94, 0.4);">'
-        f'<th style="padding: 10px 12px; text-align: left; font-size: 0.92rem; font-weight: 700; color: #4ade80;" colspan="2">🟢 1. ENTRADAS / PROVENTOS (DETALHADO)</th>'
-        f'</tr>'
-        f'</thead>'
+        f'<div style="width: 100%; display: flex; flex-direction: column; gap: 16px; user-select: text !important; -webkit-user-select: text !important;">'
+        f'<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px;">'
+        f'<div style="background: rgba(34, 197, 94, 0.06); border: 1px solid rgba(34, 197, 94, 0.4); border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px;">'
+        f'<div style="width: 44px; height: 44px; border-radius: 50%; background: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: white; flex-shrink: 0;">💼</div>'
+        f'<div>'
+        f'<div style="font-size: 0.82rem; font-weight: 600; color: #86efac;">Total de Créditos</div>'
+        f'<div style="font-size: 1.35rem; font-weight: 800; color: #ffffff; line-height: 1.2; margin-top: 2px;">{total_creditos_val}</div>'
+        f'<div style="font-size: 0.76rem; font-weight: 600; color: #4ade80; margin-top: 2px;">↑ Entradas</div>'
+        f'</div>'
+        f'</div>'
+        f'<div style="background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px;">'
+        f'<div style="width: 44px; height: 44px; border-radius: 50%; background: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: white; flex-shrink: 0;">⬇️</div>'
+        f'<div>'
+        f'<div style="font-size: 0.82rem; font-weight: 600; color: #fca5a5;">Total de Débitos</div>'
+        f'<div style="font-size: 1.35rem; font-weight: 800; color: #ffffff; line-height: 1.2; margin-top: 2px;">{total_debitos_val}</div>'
+        f'<div style="font-size: 0.76rem; font-weight: 600; color: #f87171; margin-top: 2px;">↓ Descontos</div>'
+        f'</div>'
+        f'</div>'
+        f'<div style="background: rgba(14, 165, 233, 0.06); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px;">'
+        f'<div style="width: 44px; height: 44px; border-radius: 50%; background: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: white; flex-shrink: 0;">📊</div>'
+        f'<div>'
+        f'<div style="font-size: 0.82rem; font-weight: 600; color: #7dd3fc;">Rendimento Líquido</div>'
+        f'<div style="font-size: 1.35rem; font-weight: 800; color: #ffffff; line-height: 1.2; margin-top: 2px;">{rendimento_liquido_val}</div>'
+        f'<div style="font-size: 0.76rem; font-weight: 600; color: #38bdf8; margin-top: 2px;">↓ Valor recebido</div>'
+        f'</div>'
+        f'</div>'
+        f'</div>'
+        f'<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">'
+        f'<div style="background: rgba(20, 28, 45, 0.45); border: 1px solid rgba(34, 197, 94, 0.35); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">'
+        f'<div>'
+        f'<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(34, 197, 94, 0.12); border-radius: 8px; margin-bottom: 8px;">'
+        f'<span style="font-size: 0.95rem; font-weight: 700; color: #4ade80; display: flex; align-items: center; gap: 8px;">'
+        f'<span style="width: 24px; height: 24px; border-radius: 50%; background: #22c55e; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; color: white;">🟢</span>'
+        f'Entradas / Créditos'
+        f'</span>'
+        f'<span style="font-size: 0.82rem; font-weight: 600; color: #94a3b8;">Valor</span>'
+        f'</div>'
+        f'<table style="width: 100%; border-collapse: collapse;">'
         f'<tbody>'
-        f'{entradas_rows or no_ent}'
-        f'</tbody>'
-        f'<thead>'
-        f'<tr style="background: rgba(239, 68, 68, 0.25); border-bottom: 1px solid rgba(239, 68, 68, 0.4);">'
-        f'<th style="padding: 10px 12px; text-align: left; font-size: 0.92rem; font-weight: 700; color: #f87171;" colspan="2">🔴 2. SAÍDAS / DESCONTOS (DETALHADO)</th>'
-        f'</tr>'
-        f'</thead>'
-        f'<tbody>'
-        f'{saidas_rows or no_sai}'
-        f'</tbody>'
-        f'<thead>'
-        f'<tr style="background: rgba(14, 165, 233, 0.25); border-bottom: 1px solid rgba(56, 189, 248, 0.4);">'
-        f'<th style="padding: 10px 12px; text-align: left; font-size: 0.92rem; font-weight: 700; color: #38bdf8;" colspan="2">🔵 3. TOTAIS E RESULTADO LÍQUIDO</th>'
-        f'</tr>'
-        f'</thead>'
-        f'<tbody>'
-        f'{resumo_rows or no_res}'
+        f'{entradas_rows_html or no_ent}'
         f'</tbody>'
         f'</table>'
+        f'</div>'
+        f'<div style="background: rgba(34, 197, 94, 0.15); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; font-weight: 800; font-size: 0.95rem; color: #4ade80; margin-top: 12px;">'
+        f'<span>Total de Créditos</span>'
+        f'<span>{total_creditos_val}</span>'
+        f'</div>'
+        f'</div>'
+        f'<div style="background: rgba(20, 28, 45, 0.45); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">'
+        f'<div>'
+        f'<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(239, 68, 68, 0.12); border-radius: 8px; margin-bottom: 8px;">'
+        f'<span style="font-size: 0.95rem; font-weight: 700; color: #f87171; display: flex; align-items: center; gap: 8px;">'
+        f'<span style="width: 24px; height: 24px; border-radius: 50%; background: #ef4444; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; color: white;">⬇️</span>'
+        f'Saídas / Descontos'
+        f'</span>'
+        f'<span style="font-size: 0.82rem; font-weight: 600; color: #94a3b8;">Valor</span>'
+        f'</div>'
+        f'<table style="width: 100%; border-collapse: collapse;">'
+        f'<tbody>'
+        f'{saidas_rows_html or no_sai}'
+        f'</tbody>'
+        f'</table>'
+        f'</div>'
+        f'<div style="background: rgba(239, 68, 68, 0.15); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; font-weight: 800; font-size: 0.95rem; color: #f87171; margin-top: 12px;">'
+        f'<span>Total de Débitos</span>'
+        f'<span>{total_debitos_val}</span>'
+        f'</div>'
+        f'</div>'
+        f'</div>'
         f'</div>'
     )
 
@@ -218,9 +230,9 @@ def render_selectable_table(df_totais: pd.DataFrame) -> str:
 st.markdown("---")
 st.subheader(f"Totais por tipo ({title_scope})")
 totais_tipo = build_totais_tipo(df_f)
-left, right = st.columns([1, 1])
+left, right = st.columns([3, 1])
 with left:
-    st.html(render_selectable_table(totais_tipo[["Tipo", "Total"]]))
+    st.html(render_financial_dashboard(totais_tipo[["Tipo", "Total"]]))
 with right:
     stats = build_indenizacao_stats(df_f, totais_tipo)
     st.markdown(
