@@ -113,8 +113,8 @@ if state.nome_sel and nome_col and nome_col in df_f.columns:
     elif len(found_names) > 1:
         title_scope = ", ".join(found_names[:3]) + ("..." if len(found_names) > 3 else "")
 
-def render_financial_dashboard(df_totais: pd.DataFrame) -> str:
-    """Render financial dashboard with 3 top summary cards and 2 detailed tables matching reference mockup."""
+def render_complete_financial_section(df_totais: pd.DataFrame, stats: dict[str, str]) -> str:
+    """Render financial dashboard and Painel de Indenizações in a unified CSS Grid layout for 100% pixel-perfect height alignment."""
     entradas_rows_html = ""
     saidas_rows_html = ""
 
@@ -154,8 +154,9 @@ def render_financial_dashboard(df_totais: pd.DataFrame) -> str:
     no_sai = '<tr><td colspan="2" style="padding:10px; color:#94a3b8; font-size:0.85rem;">Nenhum desconto registrado</td></tr>'
 
     return (
-        f'<div style="width: 100%; display: flex; flex-direction: column; gap: 16px; user-select: text !important; -webkit-user-select: text !important;">'
-        f'<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px;">'
+        f'<div style="width: 100%; display: grid; grid-template-columns: minmax(0, 3.1fr) minmax(0, 1fr); gap: 16px; align-items: stretch; user-select: text !important; -webkit-user-select: text !important;">'
+        f'<div style="display: flex; flex-direction: column; gap: 16px;">'
+        f'<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">'
         f'<div style="background: rgba(34, 197, 94, 0.06); border: 1px solid rgba(34, 197, 94, 0.4); border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px;">'
         f'<div style="width: 44px; height: 44px; border-radius: 50%; background: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: white; flex-shrink: 0;">💼</div>'
         f'<div>'
@@ -181,7 +182,7 @@ def render_financial_dashboard(df_totais: pd.DataFrame) -> str:
         f'</div>'
         f'</div>'
         f'</div>'
-        f'<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">'
+        f'<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; flex-grow: 1;">'
         f'<div style="background: rgba(20, 28, 45, 0.45); border: 1px solid rgba(34, 197, 94, 0.35); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">'
         f'<div>'
         f'<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(34, 197, 94, 0.12); border-radius: 8px; margin-bottom: 8px;">'
@@ -224,40 +225,35 @@ def render_financial_dashboard(df_totais: pd.DataFrame) -> str:
         f'</div>'
         f'</div>'
         f'</div>'
-    )
-
-
-def render_indenizacao_card(stats: dict[str, str]) -> str:
-    """Render Painel de Indenizações spanning 100% height with matching visual elements."""
-    return (
-        f'<div style="height: 100%; min-height: 535px; background: rgba(20, 28, 45, 0.45); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; user-select: text !important; -webkit-user-select: text !important;">'
+        f'<div style="background: rgba(20, 28, 45, 0.45); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; height: 100%;">'
         f'<div>'
-        f'<div style="display: flex; align-items: center; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid rgba(56, 189, 248, 0.3); margin-bottom: 16px;">'
-        f'<span style="width: 28px; height: 28px; border-radius: 50%; background: #0284c7; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; color: white;">🏖️</span>'
-        f'<span style="font-size: 1.08rem; font-weight: 700; color: #ffffff;">Painel de Indenizações</span>'
+        f'<div style="display: flex; align-items: center; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid rgba(56, 189, 248, 0.3); margin-bottom: 14px;">'
+        f'<span style="width: 26px; height: 26px; border-radius: 50%; background: #0284c7; display: inline-flex; align-items: center; justify-content: center; font-size: 0.85rem; color: white;">🏖️</span>'
+        f'<span style="font-size: 1.05rem; font-weight: 700; color: #ffffff;">Painel de Indenizações</span>'
         f'</div>'
-        f'<div style="display: flex; flex-direction: column; gap: 16px;">'
+        f'<div style="display: flex; flex-direction: column; gap: 14px;">'
         f'<div style="padding-bottom: 10px; border-bottom: 1px solid rgba(151, 166, 195, 0.12);">'
-        f'<div style="font-size: 0.82rem; color: #94a3b8; font-weight: 500;">Último registro ({stats["mes_label"]})</div>'
-        f'<div style="font-size: 1.5rem; font-weight: 800; color: #ffffff; margin-top: 2px;">{stats["total_mes_atual"]}</div>'
-        f'</div>'
-        f'<div style="padding-bottom: 10px; border-bottom: 1px solid rgba(151, 166, 195, 0.12);">'
-        f'<div style="font-size: 0.82rem; color: #94a3b8; font-weight: 500;">Total últimos 3 meses ({stats["meses_3m_label"]})</div>'
-        f'<div style="font-size: 1.5rem; font-weight: 800; color: #ffffff; margin-top: 2px;">{stats["total_3m"]}</div>'
+        f'<div style="font-size: 0.8rem; color: #94a3b8; font-weight: 500;">Último registro ({stats["mes_label"]})</div>'
+        f'<div style="font-size: 1.45rem; font-weight: 800; color: #ffffff; margin-top: 2px;">{stats["total_mes_atual"]}</div>'
         f'</div>'
         f'<div style="padding-bottom: 10px; border-bottom: 1px solid rgba(151, 166, 195, 0.12);">'
-        f'<div style="font-size: 0.82rem; color: #94a3b8; font-weight: 500;">Total deste ano ({stats["ano_recente"]})</div>'
-        f'<div style="font-size: 1.5rem; font-weight: 800; color: #ffffff; margin-top: 2px;">{stats["total_ultimo_ano"]}</div>'
+        f'<div style="font-size: 0.8rem; color: #94a3b8; font-weight: 500;">Total últimos 3 meses ({stats["meses_3m_label"]})</div>'
+        f'<div style="font-size: 1.45rem; font-weight: 800; color: #ffffff; margin-top: 2px;">{stats["total_3m"]}</div>'
         f'</div>'
         f'<div style="padding-bottom: 10px; border-bottom: 1px solid rgba(151, 166, 195, 0.12);">'
-        f'<div style="font-size: 0.82rem; color: #94a3b8; font-weight: 500;">Total ano anterior ({stats["ano_anterior"]})</div>'
-        f'<div style="font-size: 1.5rem; font-weight: 800; color: #94a3b8; margin-top: 2px;">{stats["total_ano_anterior"]}</div>'
+        f'<div style="font-size: 0.8rem; color: #94a3b8; font-weight: 500;">Total deste ano ({stats["ano_recente"]})</div>'
+        f'<div style="font-size: 1.45rem; font-weight: 800; color: #ffffff; margin-top: 2px;">{stats["total_ultimo_ano"]}</div>'
+        f'</div>'
+        f'<div style="padding-bottom: 10px; border-bottom: 1px solid rgba(151, 166, 195, 0.12);">'
+        f'<div style="font-size: 0.8rem; color: #94a3b8; font-weight: 500;">Total ano anterior ({stats["ano_anterior"]})</div>'
+        f'<div style="font-size: 1.45rem; font-weight: 800; color: #94a3b8; margin-top: 2px;">{stats["total_ano_anterior"]}</div>'
         f'</div>'
         f'</div>'
         f'</div>'
-        f'<div style="background: rgba(14, 165, 233, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; padding: 14px 16px; margin-top: 18px;">'
-        f'<div style="font-size: 0.84rem; font-weight: 600; color: #7dd3fc;">Total Geral (Indenizações)</div>'
-        f'<div style="font-size: 1.6rem; font-weight: 800; color: #38bdf8; margin-top: 2px;">{stats["inden_total"]}</div>'
+        f'<div style="background: rgba(14, 165, 233, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; padding: 12px 14px; margin-top: 16px;">'
+        f'<div style="font-size: 0.82rem; font-weight: 600; color: #7dd3fc;">Total Geral (Indenizações)</div>'
+        f'<div style="font-size: 1.55rem; font-weight: 800; color: #38bdf8; margin-top: 2px;">{stats["inden_total"]}</div>'
+        f'</div>'
         f'</div>'
         f'</div>'
     )
@@ -266,12 +262,8 @@ def render_indenizacao_card(stats: dict[str, str]) -> str:
 st.markdown("---")
 st.subheader(f"Totais por tipo ({title_scope})")
 totais_tipo = build_totais_tipo(df_f)
-left, right = st.columns([3, 1])
-with left:
-    st.html(render_financial_dashboard(totais_tipo[["Tipo", "Total"]]))
-with right:
-    stats = build_indenizacao_stats(df_f, totais_tipo)
-    st.html(render_indenizacao_card(stats))
+stats = build_indenizacao_stats(df_f, totais_tipo)
+st.html(render_complete_financial_section(totais_tipo[["Tipo", "Total"]], stats))
 
 st.markdown("---")
 st.subheader("Gráficos de Créditos e Débitos")
