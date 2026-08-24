@@ -72,15 +72,18 @@ def build_long_dataframe(
     id_cols: list[str],
     value_cols: list[str],
 ) -> tuple[pd.DataFrame, dict[str, list[str]]]:
-    """Create long dataframe and mapping from display labels to raw columns."""
+    """Create long dataframe and mapping from display labels to raw columns with RAM optimization."""
     df_long = df.melt(id_vars=id_cols, value_vars=value_cols, var_name="Tipo", value_name="Valor")
-    df_long["Valor"] = coerce_ptbr_number(df_long["Valor"])
+    df_long["Valor"] = coerce_ptbr_number(df_long["Valor"]).astype("float32")
     df_long["TipoExib"] = clean_tipo_labels(df_long["Tipo"])
     df_long = df_long[df_long["TipoExib"].str.strip().ne("")]
+    for cat_col in ["Tipo", "TipoExib", "__vinculo", "__arquivo_label", "__mes_plot"]:
+        if cat_col in df_long.columns:
+            df_long[cat_col] = df_long[cat_col].astype("category")
     tipo_map = (
         df_long[["Tipo", "TipoExib"]]
         .drop_duplicates()
-        .groupby("TipoExib")["Tipo"]
+        .groupby("TipoExib", observed=False)["Tipo"]
         .apply(lambda s: sorted(s.astype(str).unique().tolist()))
         .to_dict()
     )

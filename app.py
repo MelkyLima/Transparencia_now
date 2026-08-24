@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+import gc
+import logging
+import os
 from pathlib import Path
+import sys
+import time
 
 import streamlit as st
 
@@ -23,6 +28,32 @@ from transformations import (
 )
 from utils import clean_tipo_label, coerce_ptbr_number, format_brl, pick_col
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger("TransparenciaApp")
+
+
+def get_ram_usage_mb() -> float:
+    """Return memory usage in MB safely across platforms."""
+    try:
+        import psutil
+
+        return psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024)
+    except Exception:
+        pass
+    try:
+        import resource
+
+        rusage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        if sys.platform == "darwin":
+            return rusage / (1024 * 1024)
+        return rusage / 1024
+    except Exception:
+        return 0.0
+
+
+start_time = time.time()
+ram_start = get_ram_usage_mb()
+logger.info(f"🚀 Streamlit Rerun Iniciado | RAM Inicial: {ram_start:.1f} MB")
 
 st.set_page_config(page_title="Painel CSV", layout="wide")
 st.markdown(
@@ -48,6 +79,12 @@ st.title("Painel Transparência TJRR")
 @st.cache_data(show_spinner=False)
 def load_cached(files: tuple[str, ...]):
     return load_all_dataframe([Path(p) for p in files])
+
+
+@st.cache_data(show_spinner=False)
+def convert_df_to_csv(df: pd.DataFrame) -> bytes:
+    """Cache CSV string conversion so rapid filter reruns do not allocate memory repeatedly."""
+    return df.to_csv(index=False, sep=";", encoding="utf-8-sig").encode("utf-8-sig")
 
 
 @st.cache_data(show_spinner=False)
@@ -315,7 +352,7 @@ df_export = df_detail.sort_values(["Mês - Ano"], ascending=[True])
 with col_det_title:
     st.subheader("Detalhamento dos dados")
 with col_det_down:
-    csv_bytes = df_export.to_csv(index=False, sep=";", encoding="utf-8-sig").encode("utf-8-sig")
+    csv_bytes = convert_df_to_csv(df_export)
     st.download_button(
         label="📥 Baixar Dados (CSV)",
         data=csv_bytes,
@@ -324,3 +361,8 @@ with col_det_down:
         width="stretch",
     )
 st.dataframe(df_export, width="stretch", height=600, hide_index=True)
+
+elapsed_ms = (time.time() - start_time) * 1000
+ram_end = get_ram_usage_mb()
+logger.info(f"✅ Rerun Concluído com Sucesso em {elapsed_ms:.0f}ms | RAM Final: {ram_end:.1f} MB | Linhas Exibidas: {len(df_export)}")
+gc.collect()
