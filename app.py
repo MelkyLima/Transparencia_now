@@ -114,26 +114,30 @@ if state.nome_sel and nome_col and nome_col in df_f.columns:
         title_scope = ", ".join(found_names[:3]) + ("..." if len(found_names) > 3 else "")
 
 def render_selectable_table(df_totais: pd.DataFrame) -> str:
-    """Render totais_tipo divided into 3 distinct sections: Entradas (Verde), Saídas (Vermelho), Resultado Líquido (Azul)."""
+    """Render totais_tipo divided into 3 distinct sections:
+    1. Entradas (Verde - apenas detalhamento)
+    2. Saídas (Vermelho - apenas detalhamento)
+    3. Totais e Resultado Líquido (Azul - contendo Total de Créditos, Total de Débitos e Rendimento Líquido).
+    """
     entradas_rows = ""
     saidas_rows = ""
-    liquido_rows = ""
+    resumo_dict: dict[str, tuple[str, str]] = {}
 
-    saidas_patterns = ["débito", "debit", "imposto", "previdência", "previdencia", "desconto", "teto"]
+    saidas_patterns = ["imposto", "previdência", "previdencia", "desconto", "teto"]
 
     for _, row in df_totais.iterrows():
         tipo_str = str(row["Tipo"])
         total_str = str(row["Total"])
         t_lower = tipo_str.lower()
 
-        if "líquido" in t_lower or "liquido" in t_lower:
-            liquido_rows += (
-                f'<tr style="border-bottom: 1px solid rgba(56, 189, 248, 0.3); background: rgba(14, 165, 233, 0.12);">'
-                f'<td style="padding: 10px 12px; font-size: 0.95rem; font-weight: 700; color: #38bdf8; user-select: text !important; -webkit-user-select: text !important;"><span style="color:#38bdf8; margin-right:6px;">🔵</span>{tipo_str}</td>'
-                f'<td style="padding: 10px 12px; font-size: 0.95rem; font-weight: 700; text-align: right; color: #38bdf8; user-select: text !important; -webkit-user-select: text !important;">{total_str}</td>'
-                f'</tr>'
-            )
-        elif any(p in t_lower for p in saidas_patterns):
+        # Check if it belongs to Part 3 (Summary Totals)
+        if "total de créditos" in t_lower or "total de creditos" in t_lower:
+            resumo_dict["creditos"] = (tipo_str, total_str)
+        elif "total de débitos" in t_lower or "total de debitos" in t_lower:
+            resumo_dict["debitos"] = (tipo_str, total_str)
+        elif "líquido" in t_lower or "liquido" in t_lower:
+            resumo_dict["liquido"] = (tipo_str, total_str)
+        elif any(p in t_lower for p in saidas_patterns) or "débito" in t_lower or "debit" in t_lower:
             saidas_rows += (
                 f'<tr style="border-bottom: 1px solid rgba(239, 68, 68, 0.18); background: rgba(239, 68, 68, 0.05);">'
                 f'<td style="padding: 9px 12px; font-size: 0.9rem; color: #fca5a5; user-select: text !important; -webkit-user-select: text !important;"><span style="color:#ef4444; margin-right:6px;">🔴</span>{tipo_str}</td>'
@@ -148,16 +152,43 @@ def render_selectable_table(df_totais: pd.DataFrame) -> str:
                 f'</tr>'
             )
 
+    # Build Part 3 (Summary Totals)
+    resumo_rows = ""
+    if "creditos" in resumo_dict:
+        t_name, t_val = resumo_dict["creditos"]
+        resumo_rows += (
+            f'<tr style="border-bottom: 1px solid rgba(34, 197, 94, 0.2); background: rgba(34, 197, 94, 0.08);">'
+            f'<td style="padding: 9px 12px; font-size: 0.92rem; font-weight: 600; color: #4ade80; user-select: text !important; -webkit-user-select: text !important;"><span style="color:#22c55e; margin-right:6px;">🟢</span>{t_name}</td>'
+            f'<td style="padding: 9px 12px; font-size: 0.92rem; font-weight: 700; text-align: right; color: #4ade80; user-select: text !important; -webkit-user-select: text !important;">{t_val}</td>'
+            f'</tr>'
+        )
+    if "debitos" in resumo_dict:
+        t_name, t_val = resumo_dict["debitos"]
+        resumo_rows += (
+            f'<tr style="border-bottom: 1px solid rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.08);">'
+            f'<td style="padding: 9px 12px; font-size: 0.92rem; font-weight: 600; color: #f87171; user-select: text !important; -webkit-user-select: text !important;"><span style="color:#ef4444; margin-right:6px;">🔴</span>{t_name}</td>'
+            f'<td style="padding: 9px 12px; font-size: 0.92rem; font-weight: 700; text-align: right; color: #f87171; user-select: text !important; -webkit-user-select: text !important;">{t_val}</td>'
+            f'</tr>'
+        )
+    if "liquido" in resumo_dict:
+        t_name, t_val = resumo_dict["liquido"]
+        resumo_rows += (
+            f'<tr style="border-bottom: 1px solid rgba(56, 189, 248, 0.3); background: rgba(14, 165, 233, 0.15);">'
+            f'<td style="padding: 10px 12px; font-size: 0.95rem; font-weight: 700; color: #38bdf8; user-select: text !important; -webkit-user-select: text !important;"><span style="color:#38bdf8; margin-right:6px;">🔵</span>{t_name}</td>'
+            f'<td style="padding: 10px 12px; font-size: 0.95rem; font-weight: 700; text-align: right; color: #38bdf8; user-select: text !important; -webkit-user-select: text !important;">{t_val}</td>'
+            f'</tr>'
+        )
+
     no_ent = '<tr><td colspan="2" style="padding:8px 12px; color:#94a3b8; font-size:0.85rem;">Nenhuma entrada registrada</td></tr>'
     no_sai = '<tr><td colspan="2" style="padding:8px 12px; color:#94a3b8; font-size:0.85rem;">Nenhum desconto registrado</td></tr>'
-    no_liq = '<tr><td colspan="2" style="padding:8px 12px; color:#94a3b8; font-size:0.85rem;">Nenhum resultado líquido</td></tr>'
+    no_res = '<tr><td colspan="2" style="padding:8px 12px; color:#94a3b8; font-size:0.85rem;">Nenhum resumo disponível</td></tr>'
 
     return (
-        f'<div style="max-height: 520px; overflow-y: auto; border: 1px solid rgba(151,166,195,0.35); border-radius: 12px; background: rgba(20,28,45,0.45); padding: 2px; user-select: text !important; -webkit-user-select: text !important;">'
+        f'<div style="max-height: 540px; overflow-y: auto; border: 1px solid rgba(151,166,195,0.35); border-radius: 12px; background: rgba(20,28,45,0.45); padding: 2px; user-select: text !important; -webkit-user-select: text !important;">'
         f'<table style="width: 100%; border-collapse: collapse; margin: 0; user-select: text !important; -webkit-user-select: text !important;">'
         f'<thead>'
         f'<tr style="background: rgba(34, 197, 94, 0.25); border-bottom: 1px solid rgba(34, 197, 94, 0.4);">'
-        f'<th style="padding: 10px 12px; text-align: left; font-size: 0.92rem; font-weight: 700; color: #4ade80;" colspan="2">🟢 1. ENTRADAS / PROVENTOS</th>'
+        f'<th style="padding: 10px 12px; text-align: left; font-size: 0.92rem; font-weight: 700; color: #4ade80;" colspan="2">🟢 1. ENTRADAS / PROVENTOS (DETALHADO)</th>'
         f'</tr>'
         f'</thead>'
         f'<tbody>'
@@ -165,7 +196,7 @@ def render_selectable_table(df_totais: pd.DataFrame) -> str:
         f'</tbody>'
         f'<thead>'
         f'<tr style="background: rgba(239, 68, 68, 0.25); border-bottom: 1px solid rgba(239, 68, 68, 0.4);">'
-        f'<th style="padding: 10px 12px; text-align: left; font-size: 0.92rem; font-weight: 700; color: #f87171;" colspan="2">🔴 2. SAÍDAS / DESCONTOS</th>'
+        f'<th style="padding: 10px 12px; text-align: left; font-size: 0.92rem; font-weight: 700; color: #f87171;" colspan="2">🔴 2. SAÍDAS / DESCONTOS (DETALHADO)</th>'
         f'</tr>'
         f'</thead>'
         f'<tbody>'
@@ -173,11 +204,11 @@ def render_selectable_table(df_totais: pd.DataFrame) -> str:
         f'</tbody>'
         f'<thead>'
         f'<tr style="background: rgba(14, 165, 233, 0.25); border-bottom: 1px solid rgba(56, 189, 248, 0.4);">'
-        f'<th style="padding: 10px 12px; text-align: left; font-size: 0.92rem; font-weight: 700; color: #38bdf8;" colspan="2">🔵 3. RESULTADO LÍQUIDO</th>'
+        f'<th style="padding: 10px 12px; text-align: left; font-size: 0.92rem; font-weight: 700; color: #38bdf8;" colspan="2">🔵 3. TOTAIS E RESULTADO LÍQUIDO</th>'
         f'</tr>'
         f'</thead>'
         f'<tbody>'
-        f'{liquido_rows or no_liq}'
+        f'{resumo_rows or no_res}'
         f'</tbody>'
         f'</table>'
         f'</div>'
