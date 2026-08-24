@@ -114,29 +114,70 @@ if state.nome_sel and nome_col and nome_col in df_f.columns:
         title_scope = ", ".join(found_names[:3]) + ("..." if len(found_names) > 3 else "")
 
 def render_selectable_table(df_totais: pd.DataFrame) -> str:
-    """Render totais_tipo dataframe as native HTML table for 100% text selection and mouse copy support."""
-    rows_html = ""
+    """Render totais_tipo divided into 3 distinct sections: Entradas (Verde), Saídas (Vermelho), Resultado Líquido (Azul)."""
+    entradas_rows = ""
+    saidas_rows = ""
+    liquido_rows = ""
+
+    saidas_patterns = ["débito", "debit", "imposto", "previdência", "previdencia", "desconto", "teto"]
+
     for _, row in df_totais.iterrows():
         tipo_str = str(row["Tipo"])
         total_str = str(row["Total"])
-        rows_html += (
-            f'<tr style="border-bottom: 1px solid rgba(151,166,195,0.18);">'
-            f'<td style="padding: 9px 12px; font-size: 0.9rem; color: #e2e8f0; user-select: text !important; -webkit-user-select: text !important;">{tipo_str}</td>'
-            f'<td style="padding: 9px 12px; font-size: 0.9rem; font-weight: 600; text-align: right; color: #ffffff; user-select: text !important; -webkit-user-select: text !important;">{total_str}</td>'
-            f'</tr>'
-        )
+        t_lower = tipo_str.lower()
+
+        if "líquido" in t_lower or "liquido" in t_lower:
+            liquido_rows += (
+                f'<tr style="border-bottom: 1px solid rgba(56, 189, 248, 0.3); background: rgba(14, 165, 233, 0.12);">'
+                f'<td style="padding: 10px 12px; font-size: 0.95rem; font-weight: 700; color: #38bdf8; user-select: text !important; -webkit-user-select: text !important;"><span style="color:#38bdf8; margin-right:6px;">🔵</span>{tipo_str}</td>'
+                f'<td style="padding: 10px 12px; font-size: 0.95rem; font-weight: 700; text-align: right; color: #38bdf8; user-select: text !important; -webkit-user-select: text !important;">{total_str}</td>'
+                f'</tr>'
+            )
+        elif any(p in t_lower for p in saidas_patterns):
+            saidas_rows += (
+                f'<tr style="border-bottom: 1px solid rgba(239, 68, 68, 0.18); background: rgba(239, 68, 68, 0.05);">'
+                f'<td style="padding: 9px 12px; font-size: 0.9rem; color: #fca5a5; user-select: text !important; -webkit-user-select: text !important;"><span style="color:#ef4444; margin-right:6px;">🔴</span>{tipo_str}</td>'
+                f'<td style="padding: 9px 12px; font-size: 0.9rem; font-weight: 600; text-align: right; color: #f87171; user-select: text !important; -webkit-user-select: text !important;">{total_str}</td>'
+                f'</tr>'
+            )
+        else:
+            entradas_rows += (
+                f'<tr style="border-bottom: 1px solid rgba(34, 197, 94, 0.18); background: rgba(34, 197, 94, 0.05);">'
+                f'<td style="padding: 9px 12px; font-size: 0.9rem; color: #86efac; user-select: text !important; -webkit-user-select: text !important;"><span style="color:#22c55e; margin-right:6px;">🟢</span>{tipo_str}</td>'
+                f'<td style="padding: 9px 12px; font-size: 0.9rem; font-weight: 600; text-align: right; color: #4ade80; user-select: text !important; -webkit-user-select: text !important;">{total_str}</td>'
+                f'</tr>'
+            )
+
+    no_ent = '<tr><td colspan="2" style="padding:8px 12px; color:#94a3b8; font-size:0.85rem;">Nenhuma entrada registrada</td></tr>'
+    no_sai = '<tr><td colspan="2" style="padding:8px 12px; color:#94a3b8; font-size:0.85rem;">Nenhum desconto registrado</td></tr>'
+    no_liq = '<tr><td colspan="2" style="padding:8px 12px; color:#94a3b8; font-size:0.85rem;">Nenhum resultado líquido</td></tr>'
 
     return (
-        f'<div style="max-height: 440px; overflow-y: auto; border: 1px solid rgba(151,166,195,0.35); border-radius: 12px; background: rgba(20,28,45,0.45); padding: 2px; user-select: text !important; -webkit-user-select: text !important;">'
+        f'<div style="max-height: 520px; overflow-y: auto; border: 1px solid rgba(151,166,195,0.35); border-radius: 12px; background: rgba(20,28,45,0.45); padding: 2px; user-select: text !important; -webkit-user-select: text !important;">'
         f'<table style="width: 100%; border-collapse: collapse; margin: 0; user-select: text !important; -webkit-user-select: text !important;">'
         f'<thead>'
-        f'<tr style="border-bottom: 1px solid rgba(151,166,195,0.35); background: rgba(30,42,65,0.75);">'
-        f'<th style="padding: 10px 12px; text-align: left; font-size: 0.92rem; font-weight: 700; color: #ffffff; user-select: text !important; -webkit-user-select: text !important;">Tipo</th>'
-        f'<th style="padding: 10px 12px; text-align: right; font-size: 0.92rem; font-weight: 700; color: #ffffff; user-select: text !important; -webkit-user-select: text !important;">Total</th>'
+        f'<tr style="background: rgba(34, 197, 94, 0.25); border-bottom: 1px solid rgba(34, 197, 94, 0.4);">'
+        f'<th style="padding: 10px 12px; text-align: left; font-size: 0.92rem; font-weight: 700; color: #4ade80;" colspan="2">🟢 1. ENTRADAS / PROVENTOS</th>'
         f'</tr>'
         f'</thead>'
         f'<tbody>'
-        f'{rows_html}'
+        f'{entradas_rows or no_ent}'
+        f'</tbody>'
+        f'<thead>'
+        f'<tr style="background: rgba(239, 68, 68, 0.25); border-bottom: 1px solid rgba(239, 68, 68, 0.4);">'
+        f'<th style="padding: 10px 12px; text-align: left; font-size: 0.92rem; font-weight: 700; color: #f87171;" colspan="2">🔴 2. SAÍDAS / DESCONTOS</th>'
+        f'</tr>'
+        f'</thead>'
+        f'<tbody>'
+        f'{saidas_rows or no_sai}'
+        f'</tbody>'
+        f'<thead>'
+        f'<tr style="background: rgba(14, 165, 233, 0.25); border-bottom: 1px solid rgba(56, 189, 248, 0.4);">'
+        f'<th style="padding: 10px 12px; text-align: left; font-size: 0.92rem; font-weight: 700; color: #38bdf8;" colspan="2">🔵 3. RESULTADO LÍQUIDO</th>'
+        f'</tr>'
+        f'</thead>'
+        f'<tbody>'
+        f'{liquido_rows or no_liq}'
         f'</tbody>'
         f'</table>'
         f'</div>'
