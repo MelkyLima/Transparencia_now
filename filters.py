@@ -28,6 +28,40 @@ class FilterState:
         self.tipo_sel = tipo_sel
 
 
+def get_filtered_df(
+    df: pd.DataFrame,
+    nome_col: str | None,
+    cargo_col: str | None,
+    setor_col: str | None,
+    anos_sel: list[str] | None = None,
+    arquivo_sel_label: str | None = None,
+    nome_sel: list[str] | None = None,
+    categoria_sel: list[str] | None = None,
+    vinculo_sel: list[str] | None = None,
+    cargo_sel: list[str] | None = None,
+    setor_sel: list[str] | None = None,
+) -> pd.DataFrame:
+    """Filter dataframe by active selections, optionally omitting one filter."""
+    out = df
+    if anos_sel:
+        y_num = pd.to_numeric(pd.Series(anos_sel), errors="coerce").dropna().astype("Int64").tolist()
+        out = out[out["__arquivo_ano"].isin(y_num)]
+    if arquivo_sel_label and arquivo_sel_label != "Todos":
+        out = out[out["__arquivo_label"] == arquivo_sel_label]
+    if nome_sel and nome_col and nome_col in out.columns:
+        out = out[out[nome_col].astype(str).isin(nome_sel)]
+    if categoria_sel and cargo_col and cargo_col in out.columns:
+        cats = out[cargo_col].astype(str).map(get_cargo_categoria)
+        out = out[cats.isin(categoria_sel)]
+    if vinculo_sel and "__vinculo" in out.columns:
+        out = out[out["__vinculo"].isin(vinculo_sel)]
+    if cargo_sel and cargo_col and cargo_col in out.columns:
+        out = out[out[cargo_col].astype(str).isin(cargo_sel)]
+    if setor_sel and setor_col and setor_col in out.columns:
+        out = out[out[setor_col].astype(str).isin(setor_sel)]
+    return out
+
+
 def render_sidebar_filters(
     df: pd.DataFrame,
     df_long: pd.DataFrame,
@@ -35,90 +69,164 @@ def render_sidebar_filters(
     cargo_col: str | None,
     setor_col: str | None,
 ) -> FilterState:
-    """Render sidebar and return current selected filters with dynamic cascading options."""
+    """Render sidebar and return current selected filters with full bidirectional cross-filtering."""
     with st.sidebar:
         st.header("Filtros")
 
+        # Read active selections from session_state if available
+        anos_default = sorted([str(int(a)) for a in df["__arquivo_ano"].dropna().unique().tolist()])
+        cur_anos = st.session_state.get("f_anos", anos_default)
+        cur_arquivo = st.session_state.get("f_arquivo", "Todos")
+        cur_nome = st.session_state.get("f_nome", [])
+        cur_categoria = st.session_state.get("f_categoria", [])
+        cur_vinculo = st.session_state.get("f_vinculo", [])
+        cur_cargo = st.session_state.get("f_cargo", [])
+        cur_setor = st.session_state.get("f_setor", [])
+
         # 1. Anos
-        anos = sorted([str(int(a)) for a in df["__arquivo_ano"].dropna().unique().tolist()])
-        anos_sel = st.multiselect("Ano(s) do arquivo", options=anos, default=anos, placeholder="Selecione ano(s)")
-
-        df_sub = df
-        df_long_sub = df_long
-
-        if anos_sel:
-            year_numeric = pd.to_numeric(pd.Series(anos_sel), errors="coerce").dropna().astype("Int64").tolist()
-            df_sub = df_sub[df_sub["__arquivo_ano"].isin(year_numeric)]
-            df_long_sub = df_long_sub[df_long_sub["__arquivo_ano"].isin(year_numeric)]
+        df_for_anos = get_filtered_df(
+            df,
+            nome_col,
+            cargo_col,
+            setor_col,
+            arquivo_sel_label=cur_arquivo,
+            nome_sel=cur_nome,
+            categoria_sel=cur_categoria,
+            vinculo_sel=cur_vinculo,
+            cargo_sel=cur_cargo,
+            setor_sel=cur_setor,
+        )
+        avail_anos = sorted([str(int(a)) for a in df_for_anos["__arquivo_ano"].dropna().unique().tolist()])
+        valid_cur_anos = [a for a in cur_anos if a in avail_anos] if cur_anos else avail_anos
+        anos_sel = st.multiselect("Ano(s) do arquivo", options=avail_anos, default=valid_cur_anos, key="f_anos", placeholder="Selecione ano(s)")
 
         # 2. Busca por Arquivo
-        arquivos_df = df_sub[["__arquivo", "__arquivo_label", "__arquivo_ano", "__mes_dt"]].drop_duplicates()
-        arquivos_df = arquivos_df.sort_values(["__mes_dt", "__arquivo"])
-        arquivo_labels = arquivos_df["__arquivo_label"].dropna().astype(str).tolist()
-        arquivo_sel_label = st.selectbox("Busca por Arquivo", options=["Todos"] + arquivo_labels, index=0)
-
-        if arquivo_sel_label != "Todos":
-            df_sub = df_sub[df_sub["__arquivo_label"] == arquivo_sel_label]
-            df_long_sub = df_long_sub[df_long_sub["__arquivo_label"] == arquivo_sel_label]
-
-        # 3. Busca por Nome (se houver nome selecionado, restringe os demais campos aos dados daquela pessoa)
-        nomes_opts = sorted(df_sub[nome_col].dropna().astype(str).unique().tolist()) if nome_col and nome_col in df_sub.columns else []
-        nome_sel = st.multiselect(
-            "Busca por Nome",
-            options=nomes_opts,
-            default=[],
-            placeholder="Digite para buscar nome(s)",
+        df_for_arq = get_filtered_df(
+            df,
+            nome_col,
+            cargo_col,
+            setor_col,
+            anos_sel=anos_sel,
+            nome_sel=cur_nome,
+            categoria_sel=cur_categoria,
+            vinculo_sel=cur_vinculo,
+            cargo_sel=cur_cargo,
+            setor_sel=cur_setor,
         )
-        if nome_sel and nome_col and nome_col in df_sub.columns:
-            df_sub = df_sub[df_sub[nome_col].astype(str).isin(nome_sel)]
-            df_long_sub = df_long_sub[df_long_sub[nome_col].astype(str).isin(nome_sel)]
+        arquivos_df = df_for_arq[["__arquivo", "__arquivo_label", "__arquivo_ano", "__mes_dt"]].drop_duplicates()
+        arquivos_df = arquivos_df.sort_values(["__mes_dt", "__arquivo"])
+        avail_arq_labels = arquivos_df["__arquivo_label"].dropna().astype(str).tolist()
+        arq_options = ["Todos"] + avail_arq_labels
+        idx_arq = arq_options.index(cur_arquivo) if cur_arquivo in arq_options else 0
+        arquivo_sel_label = st.selectbox("Busca por Arquivo", options=arq_options, index=idx_arq, key="f_arquivo")
+
+        # 3. Busca por Nome
+        df_for_nome = get_filtered_df(
+            df,
+            nome_col,
+            cargo_col,
+            setor_col,
+            anos_sel=anos_sel,
+            arquivo_sel_label=arquivo_sel_label,
+            categoria_sel=cur_categoria,
+            vinculo_sel=cur_vinculo,
+            cargo_sel=cur_cargo,
+            setor_sel=cur_setor,
+        )
+        avail_nomes = sorted(df_for_nome[nome_col].dropna().astype(str).unique().tolist()) if nome_col and nome_col in df_for_nome.columns else []
+        valid_cur_nome = [n for n in cur_nome if n in avail_nomes]
+        nome_sel = st.multiselect("Busca por Nome", options=avail_nomes, default=valid_cur_nome, key="f_nome", placeholder="Digite para buscar nome(s)")
 
         # 4. Nível / Categoria do Cargo
-        cats_in_df = df_sub[cargo_col].astype(str).map(get_cargo_categoria) if cargo_col and cargo_col in df_sub.columns else pd.Series(dtype=str)
-        avail_cats = [c for c in ALL_CATEGORIAS if c in cats_in_df.unique()]
-        categoria_sel = st.multiselect(
-            "Nível / Categoria do Cargo",
-            options=avail_cats,
-            default=[],
-            placeholder="Selecione categoria(s)",
+        df_for_cat = get_filtered_df(
+            df,
+            nome_col,
+            cargo_col,
+            setor_col,
+            anos_sel=anos_sel,
+            arquivo_sel_label=arquivo_sel_label,
+            nome_sel=nome_sel,
+            vinculo_sel=cur_vinculo,
+            cargo_sel=cur_cargo,
+            setor_sel=cur_setor,
         )
-        if categoria_sel:
-            mask_cat = cats_in_df.isin(categoria_sel)
-            df_sub = df_sub[mask_cat]
-            if cargo_col and cargo_col in df_long_sub.columns:
-                df_long_sub = df_long_sub[df_long_sub[cargo_col].astype(str).map(get_cargo_categoria).isin(categoria_sel)]
+        cats_in_df = df_for_cat[cargo_col].astype(str).map(get_cargo_categoria) if cargo_col and cargo_col in df_for_cat.columns else pd.Series(dtype=str)
+        avail_cats = [c for c in ALL_CATEGORIAS if c in cats_in_df.unique()]
+        valid_cur_cat = [c for c in cur_categoria if c in avail_cats]
+        categoria_sel = st.multiselect("Nível / Categoria do Cargo", options=avail_cats, default=valid_cur_cat, key="f_categoria", placeholder="Selecione categoria(s)")
 
         # 5. Filtro por Vínculo
-        vincs_in_df = df_sub["__vinculo"].dropna().unique().tolist() if "__vinculo" in df_sub.columns else []
-        avail_vincs = [v for v in ALL_VINCULOS if v in vincs_in_df]
-        vinculo_sel = st.multiselect(
-            "Filtro por Vínculo",
-            options=avail_vincs,
-            default=[],
-            placeholder="Selecione vínculo(s)",
+        df_for_vinc = get_filtered_df(
+            df,
+            nome_col,
+            cargo_col,
+            setor_col,
+            anos_sel=anos_sel,
+            arquivo_sel_label=arquivo_sel_label,
+            nome_sel=nome_sel,
+            categoria_sel=categoria_sel,
+            cargo_sel=cur_cargo,
+            setor_sel=cur_setor,
         )
-        if vinculo_sel and "__vinculo" in df_sub.columns:
-            df_sub = df_sub[df_sub["__vinculo"].isin(vinculo_sel)]
-            if "__vinculo" in df_long_sub.columns:
-                df_long_sub = df_long_sub[df_long_sub["__vinculo"].isin(vinculo_sel)]
+        vincs_in_df = df_for_vinc["__vinculo"].dropna().unique().tolist() if "__vinculo" in df_for_vinc.columns else []
+        avail_vincs = [v for v in ALL_VINCULOS if v in vincs_in_df]
+        valid_cur_vinc = [v for v in cur_vinculo if v in avail_vincs]
+        vinculo_sel = st.multiselect("Filtro por Vínculo", options=avail_vincs, default=valid_cur_vinc, key="f_vinculo", placeholder="Selecione vínculo(s)")
 
         # 6. Filtro por Cargo
-        cargos_opts = sorted(df_sub[cargo_col].dropna().astype(str).unique().tolist()) if cargo_col and cargo_col in df_sub.columns else []
-        cargo_sel = st.multiselect("Filtro por Cargo", options=cargos_opts, default=[], placeholder="Selecione cargo(s)")
-        if cargo_sel and cargo_col and cargo_col in df_sub.columns:
-            df_sub = df_sub[df_sub[cargo_col].astype(str).isin(cargo_sel)]
-            if cargo_col in df_long_sub.columns:
-                df_long_sub = df_long_sub[df_long_sub[cargo_col].astype(str).isin(cargo_sel)]
+        df_for_cargo = get_filtered_df(
+            df,
+            nome_col,
+            cargo_col,
+            setor_col,
+            anos_sel=anos_sel,
+            arquivo_sel_label=arquivo_sel_label,
+            nome_sel=nome_sel,
+            categoria_sel=categoria_sel,
+            vinculo_sel=vinculo_sel,
+            setor_sel=cur_setor,
+        )
+        avail_cargos = sorted(df_for_cargo[cargo_col].dropna().astype(str).unique().tolist()) if cargo_col and cargo_col in df_for_cargo.columns else []
+        valid_cur_cargo = [c for c in cur_cargo if c in avail_cargos]
+        cargo_sel = st.multiselect("Filtro por Cargo", options=avail_cargos, default=valid_cur_cargo, key="f_cargo", placeholder="Selecione cargo(s)")
 
         # 7. Filtro por Setor
-        setor_opts = sorted(df_sub[setor_col].dropna().astype(str).unique().tolist()) if setor_col and setor_col in df_sub.columns else []
-        setor_sel = st.multiselect("Filtro por Setor", options=setor_opts, default=[], placeholder="Selecione setor(es)")
-        if setor_sel and setor_col and setor_col in df_sub.columns:
-            df_sub = df_sub[df_sub[setor_col].astype(str).isin(setor_sel)]
-            if setor_col in df_long_sub.columns:
-                df_long_sub = df_long_sub[df_long_sub[setor_col].astype(str).isin(setor_sel)]
+        df_for_setor = get_filtered_df(
+            df,
+            nome_col,
+            cargo_col,
+            setor_col,
+            anos_sel=anos_sel,
+            arquivo_sel_label=arquivo_sel_label,
+            nome_sel=nome_sel,
+            categoria_sel=categoria_sel,
+            vinculo_sel=vinculo_sel,
+            cargo_sel=cargo_sel,
+        )
+        avail_setores = sorted(df_for_setor[setor_col].dropna().astype(str).unique().tolist()) if setor_col and setor_col in df_for_setor.columns else []
+        valid_cur_setor = [s for s in cur_setor if s in avail_setores]
+        setor_sel = st.multiselect("Filtro por Setor", options=avail_setores, default=valid_cur_setor, key="f_setor", placeholder="Selecione setor(es)")
 
         # 8. Busca por Tipo
+        df_for_tipo = get_filtered_df(
+            df,
+            nome_col,
+            cargo_col,
+            setor_col,
+            anos_sel=anos_sel,
+            arquivo_sel_label=arquivo_sel_label,
+            nome_sel=nome_sel,
+            categoria_sel=categoria_sel,
+            vinculo_sel=vinculo_sel,
+            cargo_sel=cargo_sel,
+            setor_sel=setor_sel,
+        )
+        if cargo_col and cargo_col in df_long.columns:
+            id_cols_filter = [c for c in [nome_col, cargo_col, setor_col, "__vinculo", "__arquivo", "__arquivo_label", "__mes_plot", "__mes_dt", "__arquivo_ano"] if c and c in df_for_tipo.columns]
+            df_long_sub = df_long.merge(df_for_tipo[id_cols_filter].drop_duplicates(), on=[c for c in id_cols_filter if c in df_long.columns], how="inner")
+        else:
+            df_long_sub = df_long
+
         tipos_opts = sorted(df_long_sub["TipoExib"].dropna().astype(str).unique().tolist()) if "TipoExib" in df_long_sub.columns else []
         todos_tipos = st.checkbox("Todos os tipos", value=True)
         tipo_sel = st.multiselect("Busca por Tipo", options=tipos_opts, default=[], placeholder="Selecione tipo(s)") if not todos_tipos else tipos_opts
