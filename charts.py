@@ -123,16 +123,25 @@ def build_pie_figure(df_pizza: pd.DataFrame, title: str):
         return None
     d = df_pizza.copy()
     d["ValorFormatado"] = d["Valor"].map(format_brl)
+    label_shortener = {
+        "Subsídio, Função ou Cargo em Comissão": "Subsídio / Cargo Com.",
+        "Remuneração no Órgão de Origem": "Rem. Órgão Origem",
+        "Remuneração Paradigma": "Rem. Paradigma",
+        "Vantagens Eventuais": "Vant. Eventuais",
+        "Vantagens Pessoais": "Vant. Pessoais",
+    }
+    d["TipoLegend"] = d["Tipo"].replace(label_shortener)
+
     fig = px.pie(
         d,
-        names="Tipo",
+        names="TipoLegend",
         values="Valor",
         hole=0.35,
-        custom_data=["ValorFormatado"],
+        custom_data=["ValorFormatado", "Tipo"],
         template="plotly_white",
         title=title,
     )
-    fig.update_traces(hovertemplate="%{label}<br>%{customdata[0]}<extra></extra>", textinfo="percent")
+    fig.update_traces(hovertemplate="%{customdata[1]}<br>%{customdata[0]}<extra></extra>", textinfo="percent")
     fig.update_layout(
         height=480,
         legend=dict(
@@ -141,12 +150,14 @@ def build_pie_figure(df_pizza: pd.DataFrame, title: str):
             y=-0.12,
             xanchor="center",
             x=0.5,
+            entrywidth=135,
+            entrywidthmode="pixels",
             traceorder="normal",
             title=dict(text=""),
         ),
         uniformtext_minsize=10,
         uniformtext_mode="hide",
-        margin=dict(l=15, r=15, t=50, b=80),
+        margin=dict(l=15, r=15, t=50, b=90),
     )
     return fig
 
