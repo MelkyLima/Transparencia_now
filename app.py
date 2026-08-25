@@ -139,7 +139,7 @@ def format_detail_df(
         if clean_c in df_detail.columns:
             df_detail[clean_c] = coerce_ptbr_number(df_detail[clean_c]).map(format_brl)
 
-    df_detail = df_detail.sort_values(["Mês - Ano"], ascending=[True])
+    df_detail = df_detail.sort_values(["Mês - Ano"], ascending=[False])
 
     if only_primary_cols:
         target_cols = [
@@ -389,11 +389,9 @@ if fig_evol:
 else:
     st.info("Sem dados para evolução mês a mês com os filtros atuais.")
 
-col_det_title, col_det_down = st.columns([3, 1])
-with col_det_title:
-    st.subheader("Detalhamento dos dados")
+st.subheader("Detalhamento dos dados")
 
-c_opt1, c_opt2 = st.columns([1, 1])
+c_opt1, c_opt2, c_btn = st.columns([2.5, 2.5, 1.5])
 with c_opt1:
     only_latest = st.checkbox("Exibir apenas último registro por servidor (Recomendado / Mais leve)", value=True)
 with c_opt2:
@@ -409,7 +407,7 @@ df_export = format_detail_df(
     only_primary_cols=only_primary_cols,
 )
 
-with col_det_down:
+with c_btn:
     csv_bytes = convert_df_to_csv(df_export)
     st.download_button(
         label="📥 Baixar Dados (CSV)",
