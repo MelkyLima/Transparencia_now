@@ -134,11 +134,19 @@ def build_pie_figure(df_pizza: pd.DataFrame, title: str):
     )
     fig.update_traces(hovertemplate="%{label}<br>%{customdata[0]}<extra></extra>", textinfo="percent")
     fig.update_layout(
-        height=520,
-        legend=dict(orientation="v", y=0.5, x=1.03, traceorder="normal"),
+        height=480,
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=-0.12,
+            xanchor="center",
+            x=0.5,
+            traceorder="normal",
+            title=dict(text=""),
+        ),
         uniformtext_minsize=10,
         uniformtext_mode="hide",
-        margin=dict(l=20, r=20, t=60, b=20),
+        margin=dict(l=15, r=15, t=50, b=80),
     )
     return fig
 
@@ -211,5 +219,19 @@ def build_evolucao_figure(evol: pd.DataFrame, tipo_ordem: list[str], granularida
         category_orders={"TipoExib": tipo_ordem},
         template="plotly_white",
     )
-    fig.update_layout(xaxis_title=eixo_label, yaxis_title="Valor (R$)", yaxis_tickprefix="R$ ", margin=dict(l=20, r=20, t=20, b=20))
+    fig.update_layout(
+        height=480,
+        xaxis_title=eixo_label,
+        yaxis_title="Valor (R$)",
+        yaxis_tickprefix="R$ ",
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=-0.22,
+            xanchor="center",
+            x=0.5,
+            title=dict(text=""),
+        ),
+        margin=dict(l=15, r=15, t=30, b=100),
+    )
     return fig
