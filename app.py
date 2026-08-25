@@ -75,6 +75,47 @@ header[data-testid="stHeader"] {
 .ind-item { margin-bottom: 12px; }
 .ind-label { font-size: 0.82rem; opacity: 0.85; margin-bottom: 2px; }
 .ind-value { font-size: 1.8rem; font-weight: 700; line-height: 1.1; }
+
+.main-financial-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 3.1fr) minmax(0, 1fr);
+    gap: 16px;
+    align-items: stretch;
+}
+.kpi-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+}
+.tables-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    flex-grow: 1;
+}
+
+@media (max-width: 991px) {
+    .main-financial-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+@media (max-width: 640px) {
+    .block-container {
+        padding-left: 0.4rem !important;
+        padding-right: 0.4rem !important;
+    }
+    .kpi-cards-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .tables-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .kpi-val-text {
+        font-size: 1.15rem !important;
+        word-break: break-word;
+    }
+}
 </style>
 """,
     unsafe_allow_html=True,
@@ -282,14 +323,14 @@ def render_complete_financial_section(df_totais: pd.DataFrame, stats: dict[str, 
     no_sai = '<tr><td colspan="2" style="padding:10px; color:#94a3b8; font-size:0.85rem;">Nenhum desconto registrado</td></tr>'
 
     return (
-        f'<div style="width: 100%; display: grid; grid-template-columns: minmax(0, 3.1fr) minmax(0, 1fr); gap: 16px; align-items: stretch; user-select: text !important; -webkit-user-select: text !important;">'
+        f'<div class="main-financial-grid" style="user-select: text !important; -webkit-user-select: text !important;">'
         f'<div style="display: flex; flex-direction: column; gap: 16px;">'
-        f'<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">'
+        f'<div class="kpi-cards-grid">'
         f'<div style="background: rgba(34, 197, 94, 0.06); border: 1px solid rgba(34, 197, 94, 0.4); border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px;">'
         f'<div style="width: 44px; height: 44px; border-radius: 50%; background: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: white; flex-shrink: 0;">💼</div>'
         f'<div>'
         f'<div style="font-size: 0.82rem; font-weight: 600; color: #86efac;">Total de Créditos</div>'
-        f'<div style="font-size: 1.35rem; font-weight: 800; color: #ffffff; line-height: 1.2; margin-top: 2px;">{total_creditos_val}</div>'
+        f'<div class="kpi-val-text" style="font-size: 1.35rem; font-weight: 800; color: #ffffff; line-height: 1.2; margin-top: 2px;">{total_creditos_val}</div>'
         f'<div style="font-size: 0.76rem; font-weight: 600; color: #4ade80; margin-top: 2px;">↑ Entradas</div>'
         f'</div>'
         f'</div>'
@@ -297,7 +338,7 @@ def render_complete_financial_section(df_totais: pd.DataFrame, stats: dict[str, 
         f'<div style="width: 44px; height: 44px; border-radius: 50%; background: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: white; flex-shrink: 0;">⬇️</div>'
         f'<div>'
         f'<div style="font-size: 0.82rem; font-weight: 600; color: #fca5a5;">Total de Débitos</div>'
-        f'<div style="font-size: 1.35rem; font-weight: 800; color: #ffffff; line-height: 1.2; margin-top: 2px;">{total_debitos_val}</div>'
+        f'<div class="kpi-val-text" style="font-size: 1.35rem; font-weight: 800; color: #ffffff; line-height: 1.2; margin-top: 2px;">{total_debitos_val}</div>'
         f'<div style="font-size: 0.76rem; font-weight: 600; color: #f87171; margin-top: 2px;">↓ Descontos</div>'
         f'</div>'
         f'</div>'
@@ -305,12 +346,12 @@ def render_complete_financial_section(df_totais: pd.DataFrame, stats: dict[str, 
         f'<div style="width: 44px; height: 44px; border-radius: 50%; background: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: white; flex-shrink: 0;">📊</div>'
         f'<div>'
         f'<div style="font-size: 0.82rem; font-weight: 600; color: #7dd3fc;">Rendimento Líquido</div>'
-        f'<div style="font-size: 1.35rem; font-weight: 800; color: #ffffff; line-height: 1.2; margin-top: 2px;">{rendimento_liquido_val}</div>'
+        f'<div class="kpi-val-text" style="font-size: 1.35rem; font-weight: 800; color: #ffffff; line-height: 1.2; margin-top: 2px;">{rendimento_liquido_val}</div>'
         f'<div style="font-size: 0.76rem; font-weight: 600; color: #38bdf8; margin-top: 2px;">↓ Valor recebido</div>'
         f'</div>'
         f'</div>'
         f'</div>'
-        f'<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; flex-grow: 1;">'
+        f'<div class="tables-grid">'
         f'<div style="background: rgba(20, 28, 45, 0.45); border: 1px solid rgba(34, 197, 94, 0.35); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">'
         f'<div>'
         f'<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(34, 197, 94, 0.12); border-radius: 8px; margin-bottom: 8px;">'
