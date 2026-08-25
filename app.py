@@ -391,7 +391,7 @@ else:
 
 st.subheader("Detalhamento dos dados")
 
-c_opt1, c_opt2, c_btn = st.columns([2.5, 2.5, 1.5])
+c_opt1, c_opt2 = st.columns([1, 1])
 with c_opt1:
     only_latest = st.checkbox("Exibir apenas último registro por servidor (Recomendado / Mais leve)", value=True)
 with c_opt2:
@@ -407,7 +407,10 @@ df_export = format_detail_df(
     only_primary_cols=only_primary_cols,
 )
 
-with c_btn:
+st.dataframe(df_export, width="stretch", height=600, hide_index=True)
+
+c_down_left, _ = st.columns([1, 3])
+with c_down_left:
     csv_bytes = convert_df_to_csv(df_export)
     st.download_button(
         label="📥 Baixar Dados (CSV)",
@@ -416,8 +419,6 @@ with c_btn:
         mime="text/csv",
         width="stretch",
     )
-
-st.dataframe(df_export, width="stretch", height=600, hide_index=True)
 
 elapsed_ms = (time.time() - start_time) * 1000
 ram_end = get_ram_usage_mb()
