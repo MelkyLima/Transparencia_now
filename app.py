@@ -113,9 +113,15 @@ def format_detail_df(
     nome_col: str | None,
     cargo_col: str | None,
     setor_col: str | None,
+    only_latest: bool = True,
+    only_primary_cols: bool = True,
 ) -> pd.DataFrame:
     """Cache string formatting of detail table to prevent massive RAM allocations on reruns."""
-    df_detail = df_detail_base.copy()
+    df_detail = df_detail_base
+    if only_latest and nome_col and nome_col in df_detail.columns and "__mes_dt" in df_detail.columns:
+        df_detail = df_detail.sort_values("__mes_dt").groupby(nome_col, as_index=False).last()
+
+    df_detail = df_detail.copy()
     rename_map: dict[str, str] = {"__mes_plot": "Mês - Ano", "__arquivo": "Arquivo", "__vinculo": "Vínculo"}
     if nome_col:
         rename_map[nome_col] = "Nome"
@@ -127,10 +133,31 @@ def format_detail_df(
         if c in df_detail.columns:
             rename_map[c] = clean_tipo_label(c)
     df_detail = df_detail.rename(columns=rename_map)
+
     for c in value_cols_tuple:
-        if c in df_detail.columns:
-            df_detail[c] = coerce_ptbr_number(df_detail[c]).map(format_brl)
-    return df_detail.sort_values(["Mês - Ano"], ascending=[True])
+        clean_c = clean_tipo_label(c)
+        if clean_c in df_detail.columns:
+            df_detail[clean_c] = coerce_ptbr_number(df_detail[clean_c]).map(format_brl)
+
+    df_detail = df_detail.sort_values(["Mês - Ano"], ascending=[True])
+
+    if only_primary_cols:
+        target_cols = [
+            "Nome",
+            "Cargo",
+            "Remuneração Paradigma",
+            "Subsídio, Função ou Cargo em Comissão",
+            "Indenizações",
+            "Total de Créditos",
+            "Total de Débitos",
+            "Rendimento Líquido",
+            "Mês - Ano",
+        ]
+        existing_cols = [c for c in target_cols if c in df_detail.columns]
+        if existing_cols:
+            df_detail = df_detail[existing_cols]
+
+    return df_detail
 
 
 folder = Path(__file__).parent / "dados"
@@ -362,18 +389,26 @@ if fig_evol:
 else:
     st.info("Sem dados para evolução mês a mês com os filtros atuais.")
 
-st.markdown("---")
+col_det_title, col_det_down = st.columns([3, 1])
+with col_det_title:
+    st.subheader("Detalhamento dos dados")
+
+c_opt1, c_opt2 = st.columns([1, 1])
+with c_opt1:
+    only_latest = st.checkbox("Exibir apenas último registro por servidor (Recomendado / Mais leve)", value=True)
+with c_opt2:
+    only_primary_cols = st.checkbox("Exibir apenas colunas principais", value=True)
+
 df_export = format_detail_df(
     df_detail_base=df_detail_base,
     value_cols_tuple=tuple(value_cols),
     nome_col=nome_col,
     cargo_col=cargo_col,
     setor_col=setor_col,
+    only_latest=only_latest,
+    only_primary_cols=only_primary_cols,
 )
 
-col_det_title, col_det_down = st.columns([3, 1])
-with col_det_title:
-    st.subheader("Detalhamento dos dados")
 with col_det_down:
     csv_bytes = convert_df_to_csv(df_export)
     st.download_button(
@@ -383,6 +418,7 @@ with col_det_down:
         mime="text/csv",
         width="stretch",
     )
+
 st.dataframe(df_export, width="stretch", height=600, hide_index=True)
 
 elapsed_ms = (time.time() - start_time) * 1000
