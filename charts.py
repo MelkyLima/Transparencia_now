@@ -124,11 +124,14 @@ def build_pie_figure(df_pizza: pd.DataFrame, title: str):
     d = df_pizza.copy()
     d["ValorFormatado"] = d["Valor"].map(format_brl)
     label_shortener = {
-        "Subsídio, Função ou Cargo em Comissão": "Subsídio / Cargo Com.",
+        "Subsídio, Função ou Cargo em Comissão": "Subsídio / Cargo",
         "Remuneração no Órgão de Origem": "Rem. Órgão Origem",
         "Remuneração Paradigma": "Rem. Paradigma",
         "Vantagens Eventuais": "Vant. Eventuais",
         "Vantagens Pessoais": "Vant. Pessoais",
+        "Previdência Oficial": "Previdência",
+        "Descontos Diversos": "Desc. Diversos",
+        "Retenção por Teto Constitucional": "Teto Constitucional",
     }
     d["TipoLegend"] = d["Tipo"].replace(label_shortener)
 
@@ -150,14 +153,14 @@ def build_pie_figure(df_pizza: pd.DataFrame, title: str):
             y=-0.12,
             xanchor="center",
             x=0.5,
-            entrywidth=135,
-            entrywidthmode="pixels",
+            entrywidth=0.48,
+            entrywidthmode="fraction",
             traceorder="normal",
             title=dict(text=""),
         ),
         uniformtext_minsize=10,
         uniformtext_mode="hide",
-        margin=dict(l=15, r=15, t=50, b=90),
+        margin=dict(l=10, r=10, t=50, b=90),
     )
     return fig
 
