@@ -133,14 +133,15 @@ def build_pie_figure(df_pizza: pd.DataFrame, title: str):
         "Descontos Diversos": "Desc. Diversos",
         "Retenção por Teto Constitucional": "Teto Constitucional",
     }
-    d["TipoLegend"] = d["Tipo"].replace(label_shortener)
+    d["TipoStr"] = d["Tipo"].astype(str)
+    d["TipoLegend"] = d["TipoStr"].map(lambda val: label_shortener.get(val, val))
 
     fig = px.pie(
         d,
         names="TipoLegend",
         values="Valor",
         hole=0.35,
-        custom_data=["ValorFormatado", "Tipo"],
+        custom_data=["ValorFormatado", "TipoStr"],
         template="plotly_white",
         title=title,
     )
