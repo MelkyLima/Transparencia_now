@@ -81,22 +81,20 @@ header[data-testid="stHeader"] {
 )
 
 
-def render_app_header(num_files: int, total_rows: int) -> str:
-    """Render compact, modern header bar with gradient badge and file metrics."""
-    rows_formatted = f"{total_rows:,}".replace(",", ".")
+def render_app_header(latest_update_str: str) -> str:
+    """Render compact header bar with latest update date and technical source citation."""
     return (
         f'<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 10px 16px; background: rgba(20, 28, 45, 0.6); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; margin-bottom: 12px; user-select: text !important; -webkit-user-select: text !important;">'
         f'<div style="display: flex; align-items: center; gap: 10px;">'
         f'<span style="width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #0284c7, #2563eb); display: inline-flex; align-items: center; justify-content: center; font-size: 1.1rem; color: white; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);">🏛️</span>'
         f'<div>'
         f'<span style="font-size: 1.25rem; font-weight: 800; color: #ffffff; letter-spacing: -0.3px; line-height: 1.2; display: block;">Painel Transparência TJRR</span>'
-        f'<span style="font-size: 0.76rem; color: #94a3b8; font-weight: 500;">Portal de Análise Remuneratória e Consulta de Dados</span>'
+        f'<span style="font-size: 0.76rem; color: #94a3b8; font-weight: 500;">Portal de Análise Remuneratória | Dados públicos extraídos do portal oficial <a href="https://remuneracoes.tjrr.jus.br" target="_blank" style="color: #38bdf8; text-decoration: underline; font-weight: 600;">remuneracoes.tjrr.jus.br</a></span>'
         f'</div>'
         f'</div>'
-        f'<div style="display: flex; align-items: center; gap: 10px; background: rgba(15, 23, 42, 0.7); padding: 5px 14px; border-radius: 20px; border: 1px solid rgba(148, 163, 184, 0.18);">'
-        f'<div style="font-size: 0.78rem; color: #cbd5e1;"><strong style="color: #38bdf8;">{num_files}</strong> arquivos lidos</div>'
-        f'<div style="width: 4px; height: 4px; border-radius: 50%; background: #64748b;"></div>'
-        f'<div style="font-size: 0.78rem; color: #cbd5e1;"><strong style="color: #4ade80;">{rows_formatted}</strong> registros</div>'
+        f'<div style="display: flex; align-items: center; gap: 8px; background: rgba(15, 23, 42, 0.7); padding: 5px 14px; border-radius: 20px; border: 1px solid rgba(56, 189, 248, 0.25);">'
+        f'<span style="font-size: 0.78rem; color: #94a3b8; font-weight: 500;">Última atualização:</span>'
+        f'<strong style="font-size: 0.82rem; color: #38bdf8; font-weight: 700;">{latest_update_str}</strong>'
         f'</div>'
         f'</div>'
     )
@@ -193,9 +191,16 @@ if not csv_files:
     st.stop()
 
 df_raw = load_cached(tuple(str(p) for p in csv_files))
-st.html(render_app_header(len(csv_files), len(df_raw)))
-
 df, df_long, tipo_map, nome_col, cargo_col, setor_col, value_cols = prepare_cached(df_raw)
+
+latest_dt = df["__mes_dt"].max() if "__mes_dt" in df.columns else None
+latest_update_str = (
+    str(df.loc[df["__mes_dt"] == latest_dt, "__arquivo_label"].iloc[0])
+    if (latest_dt is not None and "__arquivo_label" in df.columns and not df.loc[df["__mes_dt"] == latest_dt].empty)
+    else "-"
+)
+
+st.html(render_app_header(latest_update_str))
 state = render_sidebar_filters(df=df, df_long=df_long, nome_col=nome_col, cargo_col=cargo_col, setor_col=setor_col)
 
 df_f = filter_long_dataframe(
