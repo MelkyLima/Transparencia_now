@@ -232,6 +232,20 @@ def format_detail_df(
         existing_cols = [c for c in target_cols if c in df_detail.columns]
         if existing_cols:
             df_detail = df_detail[existing_cols]
+    else:
+        # Drop all redundant date and file metadata columns, keeping ONLY 'Mês - Ano'
+        redundant_cols = [
+            "Arquivo",
+            "__arquivo",
+            "__consulta_dt",
+            "__mes_ref",
+            "__mes_dt",
+            "__arquivo_ano",
+            "__arquivo_label",
+        ]
+        cols_to_drop = [c for c in df_detail.columns if c in redundant_cols or str(c).startswith("__")]
+        if cols_to_drop:
+            df_detail = df_detail.drop(columns=cols_to_drop)
 
     return df_detail
 
