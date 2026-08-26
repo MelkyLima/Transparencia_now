@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import sys
 import time
+import unicodedata
 
 import streamlit as st
 
@@ -207,7 +208,14 @@ def format_detail_df(
     if "Nome" in df_detail.columns:
         df_detail["Nome"] = df_detail["Nome"].astype(str).str.strip()
 
-    df_detail = df_detail.sort_values(["Mês - Ano", "Nome"], ascending=[False, True])
+        def _norm_sort(s: str) -> str:
+            nfd = unicodedata.normalize("NFD", str(s))
+            return "".join(c for c in nfd if unicodedata.category(c) != "Mn").upper()
+
+        df_detail["__sort_nome"] = df_detail["Nome"].map(_norm_sort)
+        df_detail = df_detail.sort_values(["Mês - Ano", "__sort_nome"], ascending=[False, True]).drop(columns=["__sort_nome"])
+    else:
+        df_detail = df_detail.sort_values(["Mês - Ano"], ascending=[False])
 
     if only_primary_cols:
         target_cols = [
