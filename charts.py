@@ -160,6 +160,7 @@ def build_pie_figure(df_pizza: pd.DataFrame, title: str):
                 hovertext=d["TipoStr"],
                 customdata=d["ValorFormatado"],
                 hole=0.35,
+                domain=dict(x=[0.02, 0.98], y=[0.18, 1.0]),
                 marker=dict(colors=DARK_PIE_COLORS),
                 hovertemplate="<b>%{hovertext}</b><br>Valor: %{customdata}<br>Participação: %{percent}<extra></extra>",
                 texttemplate="<b>%{percent}</b><br><b>%{customdata}</b>",
@@ -171,11 +172,11 @@ def build_pie_figure(df_pizza: pd.DataFrame, title: str):
     fig.update_layout(
         title=title,
         template="plotly_white",
-        height=480,
+        height=580,
         legend=dict(
             orientation="h",
             yanchor="top",
-            y=-0.12,
+            y=-0.08,
             xanchor="center",
             x=0.5,
             entrywidth=0.48,
