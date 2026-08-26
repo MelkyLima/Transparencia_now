@@ -141,12 +141,12 @@ def build_pie_figure(df_pizza: pd.DataFrame, title: str):
         names="TipoLegend",
         values="Valor",
         hole=0.35,
-        custom_data=["ValorFormatado", "TipoStr"],
+        custom_data=["TipoStr", "ValorFormatado"],
         template="plotly_white",
         title=title,
     )
     fig.update_traces(
-        hovertemplate="<b>%{customdata[1]}</b><br>Valor: %{customdata[0]}<br>Participação: %{percent}<extra></extra>",
+        hovertemplate="<b>%{customdata[0]}</b><br>Valor: %{customdata[1]}<br>Participação: %{percent}<extra></extra>",
         textinfo="percent",
     )
     fig.update_layout(
