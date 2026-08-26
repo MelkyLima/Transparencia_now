@@ -143,9 +143,10 @@ def build_pie_figure(df_pizza: pd.DataFrame, title: str):
             go.Pie(
                 labels=d["TipoLegend"],
                 values=d["Valor"],
+                text=d["ValorFormatado"],
+                hovertext=d["TipoStr"],
                 hole=0.35,
-                customdata=np.stack((d["TipoStr"], d["ValorFormatado"]), axis=-1),
-                hovertemplate="<b>%{customdata[0]}</b><br>Valor: %{customdata[1]}<br>Participação: %{percent}<extra></extra>",
+                hovertemplate="<b>%{hovertext}</b><br>Valor: %{text}<br>Participação: %{percent}<extra></extra>",
                 textinfo="percent",
             )
         ]
