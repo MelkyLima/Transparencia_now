@@ -204,7 +204,10 @@ def format_detail_df(
         if clean_c in df_detail.columns:
             df_detail[clean_c] = coerce_ptbr_number(df_detail[clean_c]).map(format_brl)
 
-    df_detail = df_detail.sort_values(["Mês - Ano"], ascending=[False])
+    if "Nome" in df_detail.columns:
+        df_detail["Nome"] = df_detail["Nome"].astype(str).str.strip()
+
+    df_detail = df_detail.sort_values(["Mês - Ano", "Nome"], ascending=[False, True])
 
     if only_primary_cols:
         target_cols = [
