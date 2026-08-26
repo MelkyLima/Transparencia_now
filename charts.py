@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -143,7 +144,7 @@ def build_pie_figure(df_pizza: pd.DataFrame, title: str):
                 labels=d["TipoLegend"],
                 values=d["Valor"],
                 hole=0.35,
-                customdata=list(zip(d["TipoStr"], d["ValorFormatado"])),
+                customdata=np.stack((d["TipoStr"], d["ValorFormatado"]), axis=-1),
                 hovertemplate="<b>%{customdata[0]}</b><br>Valor: %{customdata[1]}<br>Participação: %{percent}<extra></extra>",
                 textinfo="percent",
             )
