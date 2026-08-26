@@ -147,7 +147,7 @@ def build_pie_figure(df_pizza: pd.DataFrame, title: str):
                 customdata=d["ValorFormatado"],
                 hole=0.35,
                 hovertemplate="<b>%{hovertext}</b><br>Valor: %{customdata}<br>Participação: %{percent}<extra></extra>",
-                textinfo="percent",
+                texttemplate="%{percent}<br>%{customdata}",
             )
         ]
     )
