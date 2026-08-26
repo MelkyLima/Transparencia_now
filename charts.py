@@ -223,16 +223,26 @@ def build_evolucao_dataframe(df_long_filtered: pd.DataFrame, granularidade: str 
 def build_evolucao_figure(evol: pd.DataFrame, tipo_ordem: list[str], granularidade: str = "mes"):
     if evol.empty:
         return None
+    e = evol.copy()
+    e["ValorFormatado"] = e["Valor"].map(format_brl)
+    e["TipoStr"] = e["TipoExib"].astype(str)
+
     eixo_x = "MesLabel" if granularidade == "mes" else "AnoLabel"
     eixo_label = "Mês - Ano" if granularidade == "mes" else "Ano"
+    label_eixo = "Mês" if granularidade == "mes" else "Ano"
+
     fig = px.line(
-        evol,
+        e,
         x=eixo_x,
         y="Valor",
-        color="TipoExib",
+        color="TipoStr",
+        custom_data=["ValorFormatado", "TipoStr"],
         markers=True,
-        category_orders={"TipoExib": tipo_ordem},
+        category_orders={"TipoStr": [str(x) for x in tipo_ordem]},
         template="plotly_white",
+    )
+    fig.update_traces(
+        hovertemplate=f"<b>%{{customdata[1]}}</b><br>{label_eixo}: %{{x}}<br>Valor: %{{customdata[0]}}<extra></extra>"
     )
     fig.update_layout(
         height=480,
