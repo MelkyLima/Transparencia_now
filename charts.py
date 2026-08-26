@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 
 from utils import format_brl, mes_label_curto, mes_label_longo
 
@@ -136,20 +137,21 @@ def build_pie_figure(df_pizza: pd.DataFrame, title: str):
     d["TipoStr"] = d["Tipo"].astype(str)
     d["TipoLegend"] = d["TipoStr"].map(lambda val: label_shortener.get(val, val))
 
-    fig = px.pie(
-        d,
-        names="TipoLegend",
-        values="Valor",
-        hole=0.35,
-        custom_data=["TipoStr", "ValorFormatado"],
-        template="plotly_white",
-        title=title,
-    )
-    fig.update_traces(
-        hovertemplate="<b>%{customdata[0]}</b><br>Valor: %{customdata[1]}<br>Participação: %{percent}<extra></extra>",
-        textinfo="percent",
+    fig = go.Figure(
+        data=[
+            go.Pie(
+                labels=d["TipoLegend"],
+                values=d["Valor"],
+                hole=0.35,
+                customdata=list(zip(d["TipoStr"], d["ValorFormatado"])),
+                hovertemplate="<b>%{customdata[0]}</b><br>Valor: %{customdata[1]}<br>Participação: %{percent}<extra></extra>",
+                textinfo="percent",
+            )
+        ]
     )
     fig.update_layout(
+        title=title,
+        template="plotly_white",
         height=480,
         legend=dict(
             orientation="h",
