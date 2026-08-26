@@ -134,7 +134,7 @@ DARK_PIE_COLORS = [
 ]
 
 
-def build_pie_figure(df_pizza: pd.DataFrame, title: str):
+def build_pie_figure(df_pizza: pd.DataFrame, title: str, height: int = 580):
     if df_pizza.empty:
         return None
     d = df_pizza.copy()
@@ -172,7 +172,7 @@ def build_pie_figure(df_pizza: pd.DataFrame, title: str):
     fig.update_layout(
         title=title,
         template="plotly_white",
-        height=580,
+        height=height,
         legend=dict(
             orientation="h",
             yanchor="top",

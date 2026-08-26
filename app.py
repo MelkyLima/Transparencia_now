@@ -463,13 +463,13 @@ st.markdown("---")
 st.subheader("Gráficos de Créditos e Débitos")
 c1, c2 = st.columns([1, 1])
 with c1:
-    fig_c = build_pie_figure(build_pizza_creditos(totais_tipo), "Créditos")
+    fig_c = build_pie_figure(build_pizza_creditos(totais_tipo), "Créditos", height=638)
     if fig_c:
         st.plotly_chart(fig_c, width="stretch")
     else:
         st.info("Sem dados para montar a pizza de créditos.")
 with c2:
-    fig_d = build_pie_figure(build_pizza_debitos(totais_tipo), "Débitos")
+    fig_d = build_pie_figure(build_pizza_debitos(totais_tipo), "Débitos", height=580)
     if fig_d:
         st.plotly_chart(fig_d, width="stretch")
     else:
