@@ -163,8 +163,8 @@ def build_pie_figure(df_pizza: pd.DataFrame, title: str):
                 marker=dict(colors=DARK_PIE_COLORS),
                 hovertemplate="<b>%{hovertext}</b><br>Valor: %{customdata}<br>Participação: %{percent}<extra></extra>",
                 texttemplate="<b>%{percent}</b><br><b>%{customdata}</b>",
-                insidetextfont=dict(color="#ffffff", size=13),
-                outsidetextfont=dict(color="#ffffff", size=12),
+                insidetextfont=dict(color="#e2e8f0", size=13),
+                outsidetextfont=dict(color="#e2e8f0", size=12),
             )
         ]
     )
