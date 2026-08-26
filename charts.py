@@ -120,6 +120,20 @@ def build_pizza_debitos(totais_tipo: pd.DataFrame) -> pd.DataFrame:
     return _compress_pizza_slices(comp, top_n=8)
 
 
+DARK_PIE_COLORS = [
+    "#1E3A8A",  # Azul Escuro (25% mais escuro)
+    "#991B1B",  # Vermelho/Coral Escuro (25% mais escuro)
+    "#047857",  # Verde Esmeralda Escuro (25% mais escuro)
+    "#5B21B6",  # Roxo Escuro (25% mais escuro)
+    "#C2410C",  # Laranja Escuro (25% mais escuro)
+    "#0369A1",  # Ciano Escuro (25% mais escuro)
+    "#9D174D",  # Magenta/Rosa Escuro (25% mais escuro)
+    "#3F6212",  # Verde Limão Escuro (25% mais escuro)
+    "#701A75",  # Lilás Escuro (25% mais escuro)
+    "#854D0E",  # Âmbar/Dourado Escuro (25% mais escuro)
+]
+
+
 def build_pie_figure(df_pizza: pd.DataFrame, title: str):
     if df_pizza.empty:
         return None
@@ -146,6 +160,7 @@ def build_pie_figure(df_pizza: pd.DataFrame, title: str):
                 hovertext=d["TipoStr"],
                 customdata=d["ValorFormatado"],
                 hole=0.35,
+                marker=dict(colors=DARK_PIE_COLORS),
                 hovertemplate="<b>%{hovertext}</b><br>Valor: %{customdata}<br>Participação: %{percent}<extra></extra>",
                 texttemplate="<b>%{percent}</b><br><b>%{customdata}</b>",
                 insidetextfont=dict(color="#ffffff", size=13),
