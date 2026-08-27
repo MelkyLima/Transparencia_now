@@ -497,69 +497,125 @@ def render_complete_financial_section(df_totais: pd.DataFrame, stats: dict[str, 
     )
 
 
-st.markdown("---")
-st.subheader(f"Totais por tipo ({title_scope})")
-totais_tipo = build_totais_tipo(df_f)
-stats = build_indenizacao_stats(df_f, totais_tipo)
-st.html(render_complete_financial_section(totais_tipo[["Tipo", "Total"]], stats))
+tab1, tab2 = st.tabs(["📊 Visão Geral", "🔮 Simulador Orçamentário"])
 
-st.markdown("---")
-st.subheader("Gráficos de Créditos e Débitos")
-c1, c2 = st.columns([1, 1])
-with c1:
-    fig_c = build_pie_figure(build_pizza_creditos(totais_tipo), "Créditos", height=655)
-    if fig_c:
-        st.plotly_chart(fig_c, width="stretch")
+with tab1:
+    st.markdown("---")
+    st.subheader(f"Totais por tipo ({title_scope})")
+    totais_tipo = build_totais_tipo(df_f)
+    stats = build_indenizacao_stats(df_f, totais_tipo)
+    st.html(render_complete_financial_section(totais_tipo[["Tipo", "Total"]], stats))
+
+    st.markdown("---")
+    st.subheader("Gráficos de Créditos e Débitos")
+    c1, c2 = st.columns([1, 1])
+    with c1:
+        fig_c = build_pie_figure(build_pizza_creditos(totais_tipo), "Créditos", height=655)
+        if fig_c:
+            st.plotly_chart(fig_c, width="stretch")
+        else:
+            st.info("Sem dados para montar a pizza de créditos.")
+    with c2:
+        fig_d = build_pie_figure(build_pizza_debitos(totais_tipo), "Débitos", height=638)
+        if fig_d:
+            st.plotly_chart(fig_d, width="stretch")
+        else:
+            st.info("Sem dados para montar a pizza de débitos.")
+
+    st.markdown("---")
+    modo_evol = st.radio("Gráfico de Evolução", options=["mês a mês", "ano a ano"], horizontal=True)
+    granularidade = "mes" if modo_evol == "mês a mês" else "ano"
+    st.subheader(f"Gráfico de Evolução ({modo_evol})")
+    evol, tipo_ordem = build_evolucao_dataframe(df_f, granularidade=granularidade)
+    fig_evol = build_evolucao_figure(evol, tipo_ordem, granularidade=granularidade)
+    if fig_evol:
+        st.plotly_chart(fig_evol, width="stretch")
     else:
-        st.info("Sem dados para montar a pizza de créditos.")
-with c2:
-    fig_d = build_pie_figure(build_pizza_debitos(totais_tipo), "Débitos", height=638)
-    if fig_d:
-        st.plotly_chart(fig_d, width="stretch")
-    else:
-        st.info("Sem dados para montar a pizza de débitos.")
+        st.info("Sem dados para evolução mês a mês com os filtros atuais.")
 
-st.markdown("---")
-modo_evol = st.radio("Gráfico de Evolução", options=["mês a mês", "ano a ano"], horizontal=True)
-granularidade = "mes" if modo_evol == "mês a mês" else "ano"
-st.subheader(f"Gráfico de Evolução ({modo_evol})")
-evol, tipo_ordem = build_evolucao_dataframe(df_f, granularidade=granularidade)
-fig_evol = build_evolucao_figure(evol, tipo_ordem, granularidade=granularidade)
-if fig_evol:
-    st.plotly_chart(fig_evol, width="stretch")
-else:
-    st.info("Sem dados para evolução mês a mês com os filtros atuais.")
+    st.subheader("Detalhamento dos dados")
 
-st.subheader("Detalhamento dos dados")
+    c_opt1, c_opt2 = st.columns([1, 1])
+    with c_opt1:
+        only_latest = st.checkbox("Exibir apenas último registro por servidor (Recomendado / Mais leve)", value=True)
+    with c_opt2:
+        only_primary_cols = st.checkbox("Exibir apenas colunas principais", value=True)
 
-c_opt1, c_opt2 = st.columns([1, 1])
-with c_opt1:
-    only_latest = st.checkbox("Exibir apenas último registro por servidor (Recomendado / Mais leve)", value=True)
-with c_opt2:
-    only_primary_cols = st.checkbox("Exibir apenas colunas principais", value=True)
-
-df_export = format_detail_df(
-    df_detail_base=df_detail_base,
-    value_cols_tuple=tuple(value_cols),
-    nome_col=nome_col,
-    cargo_col=cargo_col,
-    setor_col=setor_col,
-    only_latest=only_latest,
-    only_primary_cols=only_primary_cols,
-)
-
-st.dataframe(df_export, width="stretch", height=600, hide_index=True)
-
-c_down_left, _ = st.columns([1, 3])
-with c_down_left:
-    csv_bytes = convert_df_to_csv(df_export)
-    st.download_button(
-        label="📥 Baixar Dados (CSV)",
-        data=csv_bytes,
-        file_name="dados_transparencia_filtrados.csv",
-        mime="text/csv",
-        width="stretch",
+    df_export = format_detail_df(
+        df_detail_base=df_detail_base,
+        value_cols_tuple=tuple(value_cols),
+        nome_col=nome_col,
+        cargo_col=cargo_col,
+        setor_col=setor_col,
+        only_latest=only_latest,
+        only_primary_cols=only_primary_cols,
     )
+
+    st.dataframe(df_export, width="stretch", height=600, hide_index=True)
+
+    c_down_left, _ = st.columns([1, 3])
+    with c_down_left:
+        csv_bytes = convert_df_to_csv(df_export)
+        st.download_button(
+            label="📥 Baixar Dados (CSV)",
+            data=csv_bytes,
+            file_name="dados_transparencia_filtrados.csv",
+            mime="text/csv",
+            width="stretch",
+        )
+
+with tab2:
+    st.markdown("---")
+    st.subheader("Configuração da Simulação")
+    st.markdown("A simulação é aplicada sobre a **Remuneração Paradigma** considerando o cenário filtrado na barra lateral. Para uma estimativa mensal precisa, **será utilizado o mês mais recente** de cada servidor dentro da amostra selecionada.")
+    
+    col_sim_1, col_sim_2 = st.columns([1, 2])
+    with col_sim_1:
+        reajuste_percentual = st.number_input("Percentual de Reajuste (%)", min_value=0.0, max_value=100.0, value=5.0, step=0.5, format="%.1f")
+    
+    # Isolar a base mensal mais recente de cada servidor da amostra filtrada
+    df_simulacao = df_detail_base.copy()
+    if nome_col and nome_col in df_simulacao.columns and "__mes_dt" in df_simulacao.columns:
+        df_simulacao = df_simulacao.sort_values("__mes_dt").groupby(nome_col, as_index=False).last()
+        
+    custo_atual_paradigma = 0.0
+    if "Remuneração Paradigma" in df_simulacao.columns:
+        custo_atual_paradigma = df_simulacao["Remuneração Paradigma"].sum()
+        
+    fator_reajuste = 1 + (reajuste_percentual / 100)
+    novo_custo_simulado = custo_atual_paradigma * fator_reajuste
+    impacto_mensal = novo_custo_simulado - custo_atual_paradigma
+    impacto_anual = impacto_mensal * (13 + (1/3))  # 13 salários + terço de férias
+    
+    st.markdown("---")
+    st.subheader("Resultados da Simulação")
+    
+    html_simulacao = f'''
+    <div class="kpi-cards-grid" style="user-select: text !important; -webkit-user-select: text !important;">
+        <div style="background: rgba(14, 165, 233, 0.06); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 14px; padding: 16px;">
+            <div style="font-size: 0.9rem; font-weight: 600; color: #7dd3fc; margin-bottom: 8px;">Custo Atual (Paradigma)</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #ffffff;">{format_brl(custo_atual_paradigma)}</div>
+            <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">Mês base referência</div>
+        </div>
+        <div style="background: rgba(168, 85, 247, 0.06); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 14px; padding: 16px;">
+            <div style="font-size: 0.9rem; font-weight: 600; color: #d8b4fe; margin-bottom: 8px;">Novo Custo Simulado</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #ffffff;">{format_brl(novo_custo_simulado)}</div>
+            <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">Com reajuste de {reajuste_percentual}%</div>
+        </div>
+    </div>
+    <div class="kpi-cards-grid" style="margin-top: 16px; user-select: text !important; -webkit-user-select: text !important;">
+        <div style="background: rgba(34, 197, 94, 0.06); border: 1px solid rgba(34, 197, 94, 0.4); border-radius: 14px; padding: 16px;">
+            <div style="font-size: 0.9rem; font-weight: 600; color: #86efac; margin-bottom: 8px;">Impacto Mensal (+ Δ)</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #4ade80;">+ {format_brl(impacto_mensal)}</div>
+        </div>
+        <div style="background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 14px; padding: 16px;">
+            <div style="font-size: 0.9rem; font-weight: 600; color: #fcd34d; margin-bottom: 8px;">Impacto Anual Projetado (+ Δ)</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #fbbf24;">+ {format_brl(impacto_anual)}</div>
+            <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">Mensal × 13,33 (13º + 1/3 Férias)</div>
+        </div>
+    </div>
+    '''
+    st.html(html_simulacao)
 
 elapsed_ms = (time.time() - start_time) * 1000
 ram_end = get_ram_usage_mb()
