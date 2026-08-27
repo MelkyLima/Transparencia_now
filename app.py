@@ -465,13 +465,13 @@ c1, c2 = st.columns([1, 1])
 with c1:
     fig_c = build_pie_figure(build_pizza_creditos(totais_tipo), "Créditos", height=655)
     if fig_c:
-        st.plotly_chart(fig_c, use_container_width=True)
+        st.plotly_chart(fig_c, width="stretch")
     else:
         st.info("Sem dados para montar a pizza de créditos.")
 with c2:
     fig_d = build_pie_figure(build_pizza_debitos(totais_tipo), "Débitos", height=638)
     if fig_d:
-        st.plotly_chart(fig_d, use_container_width=True)
+        st.plotly_chart(fig_d, width="stretch")
     else:
         st.info("Sem dados para montar a pizza de débitos.")
 
@@ -482,7 +482,7 @@ st.subheader(f"Gráfico de Evolução ({modo_evol})")
 evol, tipo_ordem = build_evolucao_dataframe(df_f, granularidade=granularidade)
 fig_evol = build_evolucao_figure(evol, tipo_ordem, granularidade=granularidade)
 if fig_evol:
-    st.plotly_chart(fig_evol, use_container_width=True)
+    st.plotly_chart(fig_evol, width="stretch")
 else:
     st.info("Sem dados para evolução mês a mês com os filtros atuais.")
 
