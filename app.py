@@ -578,14 +578,25 @@ with tab2:
     if nome_col and nome_col in df_simulacao.columns and "__mes_dt" in df_simulacao.columns:
         df_simulacao = df_simulacao.sort_values("__mes_dt").groupby(nome_col, as_index=False).last()
         
+    col_paradigma = None
+    for c in df_simulacao.columns:
+        if clean_tipo_label(c) == "Remuneração Paradigma":
+            col_paradigma = c
+            break
+            
+    num_servidores = len(df_simulacao)
     custo_atual_paradigma = 0.0
-    if "Remuneração Paradigma" in df_simulacao.columns:
-        custo_atual_paradigma = df_simulacao["Remuneração Paradigma"].sum()
+    if col_paradigma and col_paradigma in df_simulacao.columns:
+        df_simulacao["__val_paradigma"] = coerce_ptbr_number(df_simulacao[col_paradigma]).fillna(0.0)
+        custo_atual_paradigma = float(df_simulacao["__val_paradigma"].sum())
+    else:
+        df_simulacao["__val_paradigma"] = 0.0
         
     fator_reajuste = 1 + (reajuste_percentual / 100)
     novo_custo_simulado = custo_atual_paradigma * fator_reajuste
     impacto_mensal = novo_custo_simulado - custo_atual_paradigma
     impacto_anual = impacto_mensal * (13 + (1/3))  # 13 salários + terço de férias
+    media_impacto_servidor = (impacto_mensal / num_servidores) if num_servidores > 0 else 0.0
     
     st.markdown("---")
     st.subheader("Resultados da Simulação")
@@ -595,18 +606,17 @@ with tab2:
         <div style="background: rgba(14, 165, 233, 0.06); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 14px; padding: 16px;">
             <div style="font-size: 0.9rem; font-weight: 600; color: #7dd3fc; margin-bottom: 8px;">Custo Atual (Paradigma)</div>
             <div style="font-size: 1.6rem; font-weight: 800; color: #ffffff;">{format_brl(custo_atual_paradigma)}</div>
-            <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">Mês base referência</div>
+            <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">Base mensal ({num_servidores} servidores)</div>
         </div>
         <div style="background: rgba(168, 85, 247, 0.06); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 14px; padding: 16px;">
             <div style="font-size: 0.9rem; font-weight: 600; color: #d8b4fe; margin-bottom: 8px;">Novo Custo Simulado</div>
             <div style="font-size: 1.6rem; font-weight: 800; color: #ffffff;">{format_brl(novo_custo_simulado)}</div>
             <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">Com reajuste de {reajuste_percentual}%</div>
         </div>
-    </div>
-    <div class="kpi-cards-grid" style="margin-top: 16px; user-select: text !important; -webkit-user-select: text !important;">
         <div style="background: rgba(34, 197, 94, 0.06); border: 1px solid rgba(34, 197, 94, 0.4); border-radius: 14px; padding: 16px;">
             <div style="font-size: 0.9rem; font-weight: 600; color: #86efac; margin-bottom: 8px;">Impacto Mensal (+ Δ)</div>
             <div style="font-size: 1.6rem; font-weight: 800; color: #4ade80;">+ {format_brl(impacto_mensal)}</div>
+            <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">Média: + {format_brl(media_impacto_servidor)} / servidor</div>
         </div>
         <div style="background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 14px; padding: 16px;">
             <div style="font-size: 0.9rem; font-weight: 600; color: #fcd34d; margin-bottom: 8px;">Impacto Anual Projetado (+ Δ)</div>
@@ -616,6 +626,37 @@ with tab2:
     </div>
     '''
     st.html(html_simulacao)
+
+    if cargo_col and cargo_col in df_simulacao.columns and not df_simulacao.empty:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.subheader("Impacto por Cargo (Amostra Filtrada)")
+        df_by_cargo = (
+            df_simulacao.groupby(cargo_col, as_index=False)
+            .agg(
+                Qtd_Servidores=(nome_col if (nome_col and nome_col in df_simulacao.columns) else cargo_col, "count"),
+                Custo_Atual=("__val_paradigma", "sum"),
+            )
+        )
+        df_by_cargo["Novo_Custo"] = df_by_cargo["Custo_Atual"] * fator_reajuste
+        df_by_cargo["Impacto_Mensal"] = df_by_cargo["Novo_Custo"] - df_by_cargo["Custo_Atual"]
+        df_by_cargo["Impacto_Anual"] = df_by_cargo["Impacto_Mensal"] * (13 + (1/3))
+        
+        df_by_cargo = df_by_cargo.sort_values("Impacto_Mensal", ascending=False).reset_index(drop=True)
+        
+        df_cargo_show = df_by_cargo.copy()
+        df_cargo_show = df_cargo_show.rename(columns={
+            cargo_col: "Cargo",
+            "Qtd_Servidores": "Qtd Servidores",
+            "Custo_Atual": "Custo Atual (R$)",
+            "Novo_Custo": "Novo Custo (R$)",
+            "Impacto_Mensal": "Impacto Mensal (R$)",
+            "Impacto_Anual": "Impacto Anual (R$)",
+        })
+        
+        for c in ["Custo Atual (R$)", "Novo Custo (R$)", "Impacto Mensal (R$)", "Impacto Anual (R$)"]:
+            df_cargo_show[c] = df_cargo_show[c].map(format_brl)
+            
+        st.dataframe(df_cargo_show, width="stretch", hide_index=True)
 
 elapsed_ms = (time.time() - start_time) * 1000
 ram_end = get_ram_usage_mb()
