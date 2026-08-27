@@ -86,26 +86,16 @@ header[data-testid="stHeader"] {
 }
 .kpi-cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 14px;
 }
 .tables-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 16px;
     flex-grow: 1;
 }
-.kpi-val-text {
-    font-size: clamp(0.9rem, 1.8vw, 1.35rem) !important;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
 
-@media (max-width: 1280px) {
-    .kpi-val-text {
-        font-size: clamp(0.82rem, 1.5vw, 1.15rem) !important;
-    }
-}
 @media (max-width: 991px) {
     .main-financial-grid {
         grid-template-columns: 1fr !important;
@@ -123,7 +113,7 @@ header[data-testid="stHeader"] {
         grid-template-columns: 1fr !important;
     }
     .kpi-val-text {
-        font-size: 1.0rem !important;
+        font-size: 1.15rem !important;
         word-break: break-word;
     }
 }
@@ -409,7 +399,7 @@ def render_complete_financial_section(df_totais: pd.DataFrame, stats: dict[str, 
         f'<div style="width: 44px; height: 44px; border-radius: 50%; background: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: white; flex-shrink: 0;">💼</div>'
         f'<div>'
         f'<div style="font-size: 0.82rem; font-weight: 600; color: #86efac;">Total de Créditos</div>'
-        f'<div class="kpi-val-text" style="font-size: clamp(0.85rem, 1.8vw, 1.35rem); font-weight: 800; color: #ffffff; line-height: 1.2; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{total_creditos_val.replace("R$ ", "R$\u00a0")}</div>'
+        f'<div class="kpi-val-text" style="font-size: 1.35rem; font-weight: 800; color: #ffffff; line-height: 1.2; margin-top: 2px; white-space: nowrap !important;">{total_creditos_val.replace("R$ ", "R$&nbsp;")}</div>'
         f'<div style="font-size: 0.76rem; font-weight: 600; color: #4ade80; margin-top: 2px;">↑ Entradas</div>'
         f'</div>'
         f'</div>'
@@ -417,7 +407,7 @@ def render_complete_financial_section(df_totais: pd.DataFrame, stats: dict[str, 
         f'<div style="width: 44px; height: 44px; border-radius: 50%; background: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: white; flex-shrink: 0;">⬇️</div>'
         f'<div>'
         f'<div style="font-size: 0.82rem; font-weight: 600; color: #fca5a5;">Total de Débitos</div>'
-        f'<div class="kpi-val-text" style="font-size: clamp(0.85rem, 1.8vw, 1.35rem); font-weight: 800; color: #ffffff; line-height: 1.2; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{total_debitos_val.replace("R$ ", "R$\u00a0")}</div>'
+        f'<div class="kpi-val-text" style="font-size: 1.35rem; font-weight: 800; color: #ffffff; line-height: 1.2; margin-top: 2px; white-space: nowrap !important;">{total_debitos_val.replace("R$ ", "R$&nbsp;")}</div>'
         f'<div style="font-size: 0.76rem; font-weight: 600; color: #f87171; margin-top: 2px;">↓ Descontos</div>'
         f'</div>'
         f'</div>'
@@ -425,7 +415,7 @@ def render_complete_financial_section(df_totais: pd.DataFrame, stats: dict[str, 
         f'<div style="width: 44px; height: 44px; border-radius: 50%; background: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: white; flex-shrink: 0;">📊</div>'
         f'<div>'
         f'<div style="font-size: 0.82rem; font-weight: 600; color: #7dd3fc;">Rendimento Líquido</div>'
-        f'<div class="kpi-val-text" style="font-size: clamp(0.85rem, 1.8vw, 1.35rem); font-weight: 800; color: #ffffff; line-height: 1.2; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{rendimento_liquido_val.replace("R$ ", "R$\u00a0")}</div>'
+        f'<div class="kpi-val-text" style="font-size: 1.35rem; font-weight: 800; color: #ffffff; line-height: 1.2; margin-top: 2px; white-space: nowrap !important;">{rendimento_liquido_val.replace("R$ ", "R$&nbsp;")}</div>'
         f'<div style="font-size: 0.76rem; font-weight: 600; color: #38bdf8; margin-top: 2px;">↓ Valor recebido</div>'
         f'</div>'
         f'</div>'
