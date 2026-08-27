@@ -9,7 +9,6 @@ import time
 import unicodedata
 
 import streamlit as st
-import streamlit.components.v1 as components
 
 from charts import (
     build_evolucao_dataframe,
@@ -141,7 +140,7 @@ textarea:-webkit-autofill {
 
 
 # Inibir autocomplete/autofill do navegador nos campos do app
-components.html(
+st.iframe(
     """
     <script>
     (function() {
