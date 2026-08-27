@@ -469,7 +469,7 @@ with c1:
     else:
         st.info("Sem dados para montar a pizza de créditos.")
 with c2:
-    fig_d = build_pie_figure(build_pizza_debitos(totais_tipo), "Débitos", height=580)
+    fig_d = build_pie_figure(build_pizza_debitos(totais_tipo), "Débitos", height=638)
     if fig_d:
         st.plotly_chart(fig_d, width="stretch")
     else:
