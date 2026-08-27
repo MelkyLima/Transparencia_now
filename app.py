@@ -463,7 +463,7 @@ st.markdown("---")
 st.subheader("Gráficos de Créditos e Débitos")
 c1, c2 = st.columns([1, 1])
 with c1:
-    fig_c = build_pie_figure(build_pizza_creditos(totais_tipo), "Créditos", height=638)
+    fig_c = build_pie_figure(build_pizza_creditos(totais_tipo), "Créditos", height=648)
     if fig_c:
         st.plotly_chart(fig_c, use_container_width=True)
     else:
