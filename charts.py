@@ -83,6 +83,7 @@ def _pick_total(df_totais: pd.DataFrame, regex_key: str) -> float:
 
 def _compress_pizza_slices(df_pizza: pd.DataFrame, top_n: int = 8) -> pd.DataFrame:
     d = df_pizza.sort_values("Valor", ascending=False).reset_index(drop=True)
+    d["Tipo"] = d["Tipo"].astype(str)
     if len(d) <= top_n:
         return d
     head = d.head(top_n).copy()
@@ -96,6 +97,7 @@ def build_pizza_creditos(totais_tipo: pd.DataFrame) -> pd.DataFrame:
     total_creditos = _pick_total(totais_tipo, RE_TOTAL_CREDITOS)
     mask_credito_comp = ~totais_tipo["Tipo"].astype(str).str.contains(RE_EXCLUI_CREDITO, case=False, na=False, regex=True)
     comp = totais_tipo.loc[mask_credito_comp, ["Tipo", "Valor"]].copy()
+    comp["Tipo"] = comp["Tipo"].astype(str)
     comp["Valor"] = pd.to_numeric(comp["Valor"], errors="coerce").fillna(0.0)
     comp = comp[comp["Valor"] > 0]
     outros = total_creditos - float(comp["Valor"].sum())
@@ -110,6 +112,7 @@ def build_pizza_debitos(totais_tipo: pd.DataFrame) -> pd.DataFrame:
     total_debitos = _pick_total(totais_tipo, RE_TOTAL_DEBITOS)
     mask_debito_comp = totais_tipo["Tipo"].astype(str).str.contains(RE_DEBITO_PARTES, case=False, na=False, regex=True)
     comp = totais_tipo.loc[mask_debito_comp, ["Tipo", "Valor"]].copy()
+    comp["Tipo"] = comp["Tipo"].astype(str)
     comp["Valor"] = pd.to_numeric(comp["Valor"], errors="coerce").fillna(0.0)
     comp = comp[comp["Valor"] > 0]
     outros = total_debitos - float(comp["Valor"].sum())
