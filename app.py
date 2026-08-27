@@ -138,34 +138,6 @@ textarea:-webkit-autofill {
     unsafe_allow_html=True,
 )
 
-
-# Inibir autocomplete/autofill do navegador nos campos do app
-st.iframe(
-    """
-    <script>
-    (function() {
-        function disableAutocomplete() {
-            try {
-                var doc = window.parent.document;
-                doc.querySelectorAll('input, textarea, select').forEach(function(el) {
-                    el.setAttribute('autocomplete', 'off');
-                    el.setAttribute('autocorrect', 'off');
-                    el.setAttribute('autocapitalize', 'none');
-                    el.setAttribute('spellcheck', 'false');
-                });
-            } catch(e) {}
-        }
-        disableAutocomplete();
-        var obs = new MutationObserver(disableAutocomplete);
-        try {
-            obs.observe(window.parent.document.body, {childList: true, subtree: true});
-        } catch(e) {}
-    })();
-    </script>
-    """,
-    height=0,
-)
-
 def render_app_header(latest_update_str: str) -> str:
     """Render compact header bar with latest update date and technical source citation."""
     return (
