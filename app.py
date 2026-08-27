@@ -9,6 +9,7 @@ import time
 import unicodedata
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 from charts import (
     build_evolucao_dataframe,
@@ -136,6 +137,35 @@ textarea:-webkit-autofill {
 </style>
 """,
     unsafe_allow_html=True,
+)
+
+
+# Inibir autocomplete/autofill do navegador nos campos do app
+# Mantemos components.html (mesmo com o aviso no terminal) porque st.iframe não aceita height=0
+components.html(
+    """
+    <script>
+    (function() {
+        function disableAutocomplete() {
+            try {
+                var doc = window.parent.document;
+                doc.querySelectorAll('input, textarea, select').forEach(function(el) {
+                    el.setAttribute('autocomplete', 'off');
+                    el.setAttribute('autocorrect', 'off');
+                    el.setAttribute('autocapitalize', 'none');
+                    el.setAttribute('spellcheck', 'false');
+                });
+            } catch(e) {}
+        }
+        disableAutocomplete();
+        var obs = new MutationObserver(disableAutocomplete);
+        try {
+            obs.observe(window.parent.document.body, {childList: true, subtree: true});
+        } catch(e) {}
+    })();
+    </script>
+    """,
+    height=0,
 )
 
 def render_app_header(latest_update_str: str) -> str:
